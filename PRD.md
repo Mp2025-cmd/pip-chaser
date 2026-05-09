@@ -1,35 +1,38 @@
 # Pip Chaser PRD
 
 ## Product Summary
-This project is an AI trading agent for forex that talks to the user through Telegram and places paper trades through OANDA.
+Pip Chaser is a Telegram-based forex trading agent that uses OpenClaw as its gateway, skills, and orchestration host. It trades on an OANDA paper account and must stay grounded in the strategy defined by the PDF document.
 
-The important part is that it is not a random free-form AI trader. It must trade using the strategy from the PDF document we discussed. The AI helps with judgment, communication, and trade management, but the overall trading style is grounded in that strategy.
+This is not a free-form AI trader. The strategy doctrine comes from the PDF. The agent can explain, inspect, and manage trades in natural language, but its trade decisions must stay inside that doctrine and pass hard safety rails before any broker action is allowed.
 
-Version 1 is paper trading only. If it behaves well in simulation and paper trading, the system can later graduate to real-money trading with cash.
+Version 1 is paper trading only. Real-money trading comes later only if paper trading proves the system is stable, understandable, and safe.
 
 ## Goal
 The goal is to build a trading agent that can:
-- watch the market
-- look for setups that match the PDF strategy
+- talk with the user in Telegram
+- scan forex markets for setups that match the PDF strategy
 - explain what it sees in plain English
-- place paper trades automatically
-- manage those trades
-- report everything back in Telegram so the user can inspect it
+- run deterministic workflows before any trade action
+- place paper trades through OANDA only after all checks pass
+- report trade decisions, risk context, and results back in Telegram
 
 In short:
-- Telegram is the conversation layer
-- OpenClaw is the agent layer
-- OANDA paper trading is the execution layer
-- the PDF strategy is the rulebook
+- Telegram is the conversation channel
+- OpenClaw is the agent gateway and tool host
+- Skills are where the PDF strategy doctrine lives
+- Lobster is the workflow engine
+- OANDA paper trading is the execution venue
 
 ## Success Criteria
 Version 1 is successful if it can:
-- run continuously on a VPS without manual babysitting
-- detect and trade only setups that match the PDF strategy
+- run continuously on a Linux VPS without manual babysitting
+- use OpenClaw as the Telegram-facing runtime
+- trade only setups that match the PDF strategy doctrine
+- run deterministic Lobster workflows before paper execution
+- enforce hard risk rules before every broker call
 - explain every trade in Telegram in plain English
-- enforce hard risk rules before every order
 - keep a clear journal of what it saw, why it acted, and what happened
-- survive common failures without sending duplicate or dangerous orders
+- survive common failures without duplicate or dangerous orders
 
 The live-money version should only happen after paper trading proves:
 - stable uptime
@@ -38,307 +41,269 @@ The live-money version should only happen after paper trading proves:
 - understandable trade reasoning
 - acceptable performance over a meaningful sample of trades
 
-## The Main Idea
-Think of this as a small team made of software parts:
+## Core Architecture
+### 1) Telegram/OpenClaw Layer
+Telegram is the user interface, and OpenClaw is the always-on gateway that lives there.
 
-- Telegram is where the user talks to the trading agent
-- OpenClaw is the always-on AI assistant running on a VPS
-- The LLM is the reasoning engine behind OpenClaw
-- The strategy validator checks whether a market setup matches the PDF strategy
-- The risk layer makes sure the bot stays inside safe boundaries
-- OANDA is where the paper trades actually get placed
+OpenClaw is responsible for:
+- receiving Telegram messages and commands
+- managing conversation context
+- hosting skills and tool access
+- invoking Lobster workflows
+- returning explanations and reports back to the user
 
-The big design choice is this:
+This is the main layer the user interacts with. Telegram is not just an alert feed. It is the conversation and inspection layer for the trading agent.
 
-The AI does not get unlimited freedom to trade anything it wants. It can only trade inside the strategy framework from the PDF.
+### 2) Strategy Skill
+The PDF strategy should be implemented as an OpenClaw skill.
 
-## Architecture
-### 1) Telegram
-Telegram is the user interface.
+This skill owns:
+- the strategy doctrine
+- setup interpretation rules
+- trade explanation style
+- what counts as a valid or invalid setup
 
-This is where the user can:
-- ask the bot what it is doing
-- ask why it took a trade
-- ask for open positions
-- inspect trade ideas
-- pause or resume trading
-- give the bot instructions
-
-Telegram is not just for alerts. It is the main communication channel between the user and the trading agent.
-
-### 2) OpenClaw on a VPS
-OpenClaw is the agent runtime that stays online 24/7 on a VPS.
-
-Its job is to:
-- receive messages from Telegram
-- talk to the LLM
-- call the trading tools
-- keep context across conversations
-- act like the front desk and brain of the system
-
-This makes it a good fit because the whole point of OpenClaw is to let an AI live inside messaging apps like Telegram.
-
-### 3) LLM of Our Choice
-OpenClaw can sit on top of different model providers, so the system is not locked into one model.
-
-That means we can choose whichever LLM we trust most for:
-- reasoning
-- explaining setups
-- discussing trades
-- managing open positions
-
-The LLM is the decision-making layer, but it still has to stay inside the strategy and safety boundaries we define.
-
-### 4) Strategy Validator
-This is one of the most important parts of the system.
-
-The bot must be based on the trading strategy from the PDF. So before a trade is allowed, the system should check whether the setup actually matches the strategy.
-
-Examples of what this validator may look for:
+Examples of what the skill should encode:
 - the correct main timeframe
-- the wick rejection structure
-- support or resistance context
+- wick rejection structure
+- support/resistance context
 - confirmation candle behavior
-- valid stop-loss placement
-- valid take-profit structure
+- stop-loss placement rules
+- take-profit structure
 
-This keeps the bot strategy-focused instead of turning into a random AI gambler.
+The point of the skill is to keep the agent anchored to the PDF instead of drifting into random discretionary behavior.
 
-### 5) Risk and Safety Layer
-Even on paper trading, this layer matters.
+### 3) Lobster Workflows
+Lobster is the deterministic workflow layer that should sequence the multi-step trading flows.
 
-Its job is to stop bad behavior such as:
-- trading the wrong symbol
-- opening too many positions
-- using too much size
-- ignoring spread or cost limits
-- continuing to trade after a kill switch should trigger
+Lobster should be used for named workflows such as:
+- `market_scan`
+- `validate_setup`
+- `paper_trade_execute`
+- `trade_explain`
+- `daily_summary`
 
-This is the hard boundary layer. The AI can think creatively, but it cannot cross these safety rules.
+Lobster owns the ordered steps and checkpoints. The LLM still reasons inside the workflow, but the workflow itself controls what happens first, what must be validated, and what can trigger execution.
 
-### 6) Execution Service
-This is the part that translates approved trade actions into OANDA paper orders.
+### 4) MCP and Tool Reuse
+The project should prefer existing OpenClaw-compatible tools before building custom integration glue.
 
-It should:
-- place paper trades
-- modify stops
-- close positions
-- report broker responses
-- log what happened
+That means:
+- reuse OpenClaw Telegram support
+- reuse OpenClaw skills
+- reuse Lobster workflows
+- reuse MCP-compatible market context or calendar tools where helpful
+- build custom code only for the strategy-specific and broker-specific parts
 
-This layer should be separate from the chat layer. That way, not every Telegram message has direct power over the broker.
+### 5) OANDA Execution Tool/Service
+OANDA should remain behind a narrow execution boundary.
 
-### 7) OANDA Paper Account
-This is the broker-side execution environment.
+This boundary owns:
+- order placement
+- stop updates
+- trade closes
+- execution responses
+- idempotency and duplicate-order protection
 
-For now, OANDA is only used for paper trading so we can test:
-- whether the strategy logic works
-- whether the agent behaves sensibly
-- whether the conversation flow is useful
-- whether the whole system is stable
-
-No real-money trading should happen until the paper workflow proves itself.
+The agent should not get broad in-process broker authority. The only broker-touching component should be this execution tool or service.
 
 ## Infrastructure
 ### Recommended Setup
-The recommended setup for the OANDA version is a Linux VPS.
-
-The Linux VPS should run:
+The recommended setup for version 1 is a Linux VPS that runs:
 - OpenClaw
 - Telegram integration
-- LLM orchestration
-- strategy validator
-- risk and safety layer
-- execution service
-- database and logs
+- the chosen LLM provider connection
+- the strategy skill
+- Lobster workflows
+- a narrow OANDA execution tool/service
+- journaling and logs
 
-This is cleaner than the MT5 version because OANDA is API-first and does not require a desktop trading terminal.
+This is cleaner than a desktop-terminal-based broker architecture because OANDA is API-first and does not require a desktop terminal.
 
-### Fast MVP Setup
-If we want the quickest version, we can run everything on one Linux VPS:
-- OpenClaw
-- Telegram integration
-- execution service
-- OANDA paper trading integration
-- local database
-
-That is probably the right starting point for the prototype.
+### Deployment Model
+The preferred model is:
+- OpenClaw as the Telegram-facing gateway
+- Lobster as the workflow engine
+- a small OANDA execution boundary for broker actions
+- paper-trading-only credentials in the environment
 
 ## Architecture Diagram
 ```text
 User in Telegram
       |
       v
-+------------------+
-| Telegram Chat    |
-| commands + review|
-+------------------+
++-----------------------+
+| Telegram + OpenClaw   |
+| chat, commands, state |
++-----------------------+
       |
       v
-+------------------+
-| OpenClaw on VPS  |
-| agent runtime    |
-+------------------+
++-----------------------+
+| Lobster Workflow      |
+| deterministic flow    |
++-----------------------+
+      |
+      +-------------------------+
+      |                         |
+      v                         v
++-----------------------+   +-----------------------+
+| Strategy Skill        |   | Market Context Tools  |
+| PDF doctrine          |   | prices, calendars     |
++-----------------------+   +-----------------------+
       |
       v
-+------------------+        +------------------+
-| LLM Provider     |<------>| market context   |
-| reasoning brain  |        | prices + charts  |
-+------------------+        +------------------+
++-----------------------+
+| Risk and Safety       |
+| hard approval gates   |
++-----------------------+
       |
       v
-+------------------+
-| Strategy         |
-| Validator        |
-| based on PDF     |
-+------------------+
++-----------------------+
+| OANDA Execution Tool  |
+| narrow broker surface |
++-----------------------+
       |
       v
-+------------------+
-| Risk / Safety    |
-| Layer            |
-+------------------+
++-----------------------+
+| OANDA Paper Account   |
++-----------------------+
       |
       v
-+------------------+
-| Execution        |
-| Service          |
-+------------------+
-      |
-      v
-+------------------+
-| OANDA Paper      |
-| Trading Account  |
-+------------------+
-      |
-      v
-+------------------+
-| Journal / Logs   |
-| and Metrics      |
-+------------------+
++-----------------------+
+| Journal and Reporting |
+| Telegram + logs       |
++-----------------------+
 ```
 
-## What We Can Start Building Now
-### Phase 1: Skeleton
-Build the basic service skeleton:
-- Telegram bot connection
+## OpenClaw-First Implementation Sequence
+### Phase 1: OpenClaw Gateway and Telegram
+Set up:
 - OpenClaw runtime
-- OANDA paper account connection
-- database for trades and logs
-- basic health check endpoint
+- Telegram channel integration
+- slash-command or command-handling conventions
+- paper-trading-only environment separation
 
-### Phase 2: Strategy Logic
-Build the strategy validator from the PDF:
-- timeframe handling
-- wick rejection detection
-- support and resistance checks
-- confirmation logic
-- stop-loss and take-profit structure
+### Phase 2: Strategy Skill
+Create the workspace skill that encodes the PDF strategy:
+- setup criteria
+- invalidation logic
+- explanation rules
+- trading doctrine language
 
-### Phase 3: Safety Controls
-Build the safety rails:
-- max risk per trade
-- max total open risk
-- daily loss cap
-- symbol allowlist
-- spread cap
-- cooldown after losses
-- manual pause switch
-- paper/live mode guard
+### Phase 3: Lobster Workflows
+Define the deterministic workflows:
+- `market_scan`
+- `validate_setup`
+- `paper_trade_execute`
+- `trade_explain`
+- `daily_summary`
 
-### Phase 4: Trade Execution
-Build the execution service:
-- submit order
-- update stop
+Each workflow should make clear:
+- what inputs it expects
+- what tools it can call
+- what must pass before execution continues
+
+### Phase 4: OANDA Execution Boundary
+Build the narrow OANDA execution tool/service:
+- submit paper order
+- modify stop
 - close trade
-- record execution response
-- reject duplicates
+- return structured execution results
+- reject duplicates and unsafe retries
 
-### Phase 5: Telegram Experience
-Build the user-facing flow:
-- status command
-- positions command
-- explain-this-trade command
-- pause and resume commands
-- automatic trade updates
-- daily summary
-
-### Phase 6: Paper Trial
-Run the system continuously on paper trading and review:
-- trade quality
-- system stability
-- safety behavior
-- clarity of explanations
-- edge-case handling
+### Phase 5: Paper Trading Observability
+Add:
+- trade journaling
+- Telegram status and explanation responses
+- logs for every workflow run
+- review loops for paper-trade quality and failure analysis
 
 ## One Example Use Case
-### Use Case: The bot finds a valid setup and tells the user about it
-1. The system watches a forex pair.
-2. It sees price action that may match the PDF strategy.
-3. The strategy validator checks whether the setup is actually valid.
-4. If it passes, the LLM reviews the market context and decides whether the setup is worth taking.
-5. The risk layer checks size, exposure, and safety limits.
-6. The execution service places the paper trade in OANDA.
-7. The bot sends a Telegram message that explains:
-   - what pair it traded
-   - why it took the trade
-   - where the stop-loss is
-   - where take-profit targets are
-   - what the trade thesis is
-8. If the user asks follow-up questions in Telegram, the bot should be able to explain the trade in normal language.
+### Use Case: The bot finds a valid setup and reports it
+1. The user talks to the bot in Telegram or the scan runs on schedule.
+2. OpenClaw starts the `market_scan` Lobster workflow.
+3. The workflow gathers market context and passes the setup to the strategy skill.
+4. The strategy skill checks whether the setup matches the PDF doctrine.
+5. If it matches, the workflow runs `validate_setup` and risk checks.
+6. If all gates pass, the workflow calls the narrow OANDA execution tool to place the paper trade.
+7. The execution result is journaled.
+8. OpenClaw sends the user a Telegram explanation that includes:
+   - the pair
+   - why the setup matched the strategy
+   - stop-loss and take-profit context
+   - whether the trade was placed or skipped
+   - any risk notes worth knowing
 
-That means the system is not just auto-trading. It is also building an explainable trading workflow that the user can inspect.
+That means the system is not just auto-trading. It is building an explainable, workflow-driven trading process that the user can inspect.
+
+## Public Interfaces and Ownership
+### Strategy Skill
+Owns:
+- the PDF strategy doctrine
+- decision rubric
+- explanation style
+
+### Lobster Workflows
+Own:
+- ordered multi-step trading flows
+- checkpoints between reasoning and execution
+- the difference between scan, validate, execute, explain, and summarize tasks
+
+### OANDA Execution Tool/Service
+Owns:
+- order placement
+- stop updates
+- trade closes
+- structured execution responses
+- duplicate-order protection
+
+### Telegram/OpenClaw Layer
+Owns:
+- conversation
+- commands
+- inspection
+- trade reporting
+- daily summaries
 
 ## Edge Cases We Need To Handle
-### Market and data issues
-- price feed is delayed or stale
-- market is closed but the bot tries to trade
-- spread is too wide during rollover or volatility spikes
-- candle data is incomplete or arrives late
-- chart snapshot and structured data disagree
+### Workflow and reasoning issues
+- the skill says a setup is invalid but a user asks the agent to force a trade
+- the LLM explanation sounds stronger than the actual setup quality
+- a workflow is retried mid-run and risks duplicate execution
+- market context tools disagree with each other
 
 ### Broker and execution issues
 - OANDA API is unavailable
-- order is rejected because price moved
-- order is partially filled or filled at a worse price
-- trade opens but stop-loss or take-profit update fails
+- price moves before the paper order is submitted
+- order placement succeeds but follow-up stop logic fails
 - duplicate order submission happens after a retry
-
-### Agent and prompt issues
-- the LLM gives an invalid order shape
-- the LLM hallucinates a symbol or wrong trade size
-- the LLM tries to act outside the PDF strategy
-- the LLM explanation sounds confident even when the setup is weak
-- the LLM sees conflicting context between timeframes
 
 ### Telegram and operator issues
 - duplicate Telegram commands are sent
-- a command is ambiguous
-- a user asks a question that sounds like a trade instruction
-- the bot is paused but still receives market signals
-- the user wants to inspect a trade while the system is recovering from an outage
+- a user message sounds like a trade instruction but is really just a question
+- the bot is paused but a scheduled scan still fires
+- the user wants an explanation while the system is recovering from an outage
 
 ### Reliability issues
-- VPS restarts mid-trade
-- network drops during order placement
-- the database is temporarily unavailable
-- the scheduler runs twice and triggers the same setup twice
-- clocks drift and time-based logic becomes unreliable
+- VPS restarts during an active workflow
+- logs or journal writes fail
+- a scheduled workflow runs twice
+- credentials are misconfigured for paper/live separation
 
 ## Guardrails For Paper Trading
 Even in paper trading, the system should enforce:
-- paper mode must be explicit and visible in logs and Telegram
+- paper mode must be explicit in logs and Telegram
 - live credentials must not be present in the paper environment
-- every order must carry a traceable request ID
-- every trade must have a recorded reason
-- every order path must be idempotent so retries do not create duplicates
-- pause mode must stop new trades but still allow inspection and closing logic
+- every workflow run must be traceable
+- every order must carry a request ID
+- every broker action must have a recorded reason
+- pause mode must stop new paper trades but still allow inspection and close flows
 
 ## Graduation Path To Real Money
 The system should not move to cash just because it feels good. It should graduate only after clear evidence.
 
 Suggested graduation gates:
-- at least several weeks of continuous paper trading
+- several weeks of continuous paper trading
 - no critical safety failures
 - no duplicate live-equivalent orders
 - stable uptime
@@ -356,23 +321,26 @@ When we later move to real money, the first live version should still start smal
 
 ## Why This Design Makes Sense
 - It keeps the trading strategy anchored to the PDF.
-- It lets Telegram become a real conversation layer, not just an alert feed.
-- It uses OpenClaw for what it is good at: always-on messaging-based agent behavior.
-- It keeps OANDA in its proper role: execution.
-- It separates reasoning from execution, which makes the system easier to understand and safer to test.
+- It uses OpenClaw for what it is already good at: Telegram-native agent behavior.
+- It uses Lobster to make trading flows deterministic instead of improvised.
+- It prefers MCP/tool reuse before custom glue.
+- It keeps OANDA in a narrow execution role.
+- It separates conversation, reasoning, workflow control, and broker execution.
 
 ## What This Is Not
 This is not:
 - a fully unbounded AI trader
-- a random chat bot with broker access
+- a random chat bot with direct broker access
+- a custom app-first architecture
 - a live-money system
 
 Right now it should be thought of as:
-- a strategy-based AI trading assistant
-- with autonomous paper execution
-- and a strong conversation layer through Telegram
+- a strategy-based OpenClaw trading agent
+- with Lobster-managed workflows
+- a narrow OANDA paper execution layer
+- and a strong Telegram conversation surface
 
 ## The Bottom Line
 The simplest way to explain this project is:
 
-It is a Telegram-based forex trading agent that uses OpenClaw and an LLM to monitor markets, explain ideas, and place paper trades in OANDA, but only when those trades match the strategy defined in the PDF.
+Pip Chaser is a Telegram-based forex trading agent that uses OpenClaw, a PDF-based strategy skill, Lobster workflows, and a narrow OANDA paper-trading execution tool so the bot can talk naturally, trade carefully, and stay explainable.
