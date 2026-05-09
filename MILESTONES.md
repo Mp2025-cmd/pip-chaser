@@ -27,18 +27,22 @@ Definition of done:
 Goal: get the always-on runtime in place on a Linux VPS.
 
 - [x] Create the VPS deployment runbook and bootstrap artifacts
-- [ ] Choose the VPS provider and machine size
-- [ ] Provision the Linux VPS
-- [ ] Install and verify OpenClaw
+- [x] Choose the VPS provider and machine size
+- [x] Provision the Linux VPS
+- [x] Install and verify OpenClaw
 - [ ] Connect Telegram to OpenClaw
-- [ ] Configure the chosen LLM provider
-- [ ] Set up paper-only environment variables and secret storage
+- [x] Configure the chosen LLM provider
+- [x] Set up paper-only environment variables and secret storage
 - [ ] Verify the bot can receive and reply to Telegram messages
 - [ ] Verify a restart does not break the basic OpenClaw + Telegram runtime
 
 Definition of done:
 - A hosted OpenClaw instance is reachable through Telegram
 - The environment is paper-only and secrets are stored safely
+
+Current note:
+- OpenClaw is installed on the Hetzner VPS and the local gateway is healthy with OpenAI configured
+- Remaining work for Milestone 1 is Telegram connection, allowlist/owner setup, restart verification, and a clean post-update reboot
 
 ## Milestone 2: Strategy Skill
 Goal: encode the PDF trading doctrine into a reusable OpenClaw skill.
@@ -192,7 +196,7 @@ If we start building now, the next sequence should be:
 
 1. Milestone 2: Strategy Skill
 2. Milestone 4: Lobster Workflow Design
-3. Milestone 1: OpenClaw Runtime and Hosting
+3. Finish Milestone 1: OpenClaw Runtime and Hosting
 4. Milestone 3: Market Context Inputs
 5. Milestone 5: Risk and Safety Layer
 6. Milestone 6: OANDA Execution Boundary
