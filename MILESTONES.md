@@ -26,6 +26,7 @@ Definition of done:
 ## Milestone 1: OpenClaw Runtime and Hosting
 Goal: get the always-on runtime in place on a Linux VPS.
 
+- [x] Create the VPS deployment runbook and bootstrap artifacts
 - [ ] Choose the VPS provider and machine size
 - [ ] Provision the Linux VPS
 - [ ] Install and verify OpenClaw
