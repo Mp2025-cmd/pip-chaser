@@ -39,8 +39,8 @@ Current bot:
 - [x] Run `openclaw doctor`
 - [x] Run `openclaw gateway status`
 
-Current OpenClaw status before shutdown:
-- Installed version: `2026.5.7`
+Current OpenClaw status:
+- Installed version: `2026.5.12`
 - Gateway mode: `local`
 - Gateway auth: `token`
 - Gateway bind: `127.0.0.1:18789`
@@ -48,29 +48,37 @@ Current OpenClaw status before shutdown:
 
 ## 4. Connect Telegram
 
-- [ ] Power the VPS back on
-- [ ] Confirm SSH works again
-- [ ] Add Telegram to OpenClaw:
+- [x] Power the VPS back on
+- [x] Confirm SSH works again
+- [x] Add Telegram to OpenClaw:
   - `openclaw channels add --channel telegram --token "<telegram-bot-token>"`
-- [ ] DM the bot from the owner account
-- [ ] Capture the numeric Telegram user ID
-- [ ] Add the bot to the intended group
-- [ ] Capture the numeric group chat ID
-- [ ] Confirm OpenClaw receives the DM
-- [ ] Confirm OpenClaw can reply in DM
-- [ ] Confirm OpenClaw can reply in the allowed group when mentioned
+- [x] DM the bot from the owner account
+- [x] Capture the numeric Telegram user ID
+- [x] Add the bot to the intended group
+- [x] Capture the numeric group chat ID
+- [x] Confirm OpenClaw can send a DM
+- [x] Confirm OpenClaw can send to the allowed group
+- [ ] Confirm inbound DM produces an agent reply
+- [ ] Confirm inbound allowed-group mention produces an agent reply
+
+Current Telegram status:
+- Bot username: `@pip_chaser_agent_bot`
+- Owner user ID: captured and allowlisted in the VPS config
+- Group chat ID: captured and allowlisted in the VPS config
+- Group mode: mention-required
+- Known blocker: inbound messages hit the bot, but the agent response currently returns `All models are temporarily rate-limited. Please try again in a few minutes.`
 
 ## 5. Lock down Telegram access
 
-- [ ] Set `channels.telegram.dmPolicy` to `allowlist`
-- [ ] Set `channels.telegram.allowFrom` to the owner's numeric Telegram user ID
-- [ ] Set `channels.telegram.groupPolicy` to `allowlist`
-- [ ] Set `channels.telegram.groupAllowFrom` to the owner's numeric Telegram user ID
-- [ ] Add the allowed group to `channels.telegram.groups`
-- [ ] Set the allowed group to `requireMention: true`
-- [ ] Set `commands.ownerAllowFrom` to `telegram:<owner-id>`
-- [ ] Prefer explicit allowlists over open access
-- [ ] Keep execution permissions narrow from the start
+- [x] Set `channels.telegram.dmPolicy` to `allowlist`
+- [x] Set `channels.telegram.allowFrom` to the owner's numeric Telegram user ID
+- [x] Set `channels.telegram.groupPolicy` to `allowlist`
+- [x] Set `channels.telegram.groupAllowFrom` to the owner's numeric Telegram user ID
+- [x] Add the allowed group to `channels.telegram.groups`
+- [x] Set the allowed group to `requireMention: true`
+- [x] Set `commands.ownerAllowFrom` to `telegram:<owner-id>`
+- [x] Prefer explicit allowlists over open access
+- [x] Keep execution permissions narrow from the start
 
 OpenClaw Telegram docs currently recommend:
 - `channels.telegram.dmPolicy: "allowlist"` for one-owner bots
@@ -79,8 +87,9 @@ OpenClaw Telegram docs currently recommend:
 
 ## 6. Verify hosted runtime health
 
-- [ ] Confirm OpenClaw survives a service restart
-- [ ] Confirm Telegram still works after service restart
+- [x] Confirm OpenClaw survives a service restart
+- [x] Confirm outbound Telegram still works after service restart
+- [ ] Confirm inbound Telegram replies still work after service restart
 - [ ] Confirm a non-allowed sender does not trigger owner-only behavior
 - [ ] Confirm a non-allowed group does not trigger the bot
 - [x] Confirm OpenClaw still sees the selected LLM provider
@@ -97,11 +106,16 @@ Access method:
 
 Milestone 1 is done when:
 - [x] OpenClaw runs on a Linux VPS
-- [ ] Telegram is connected and working
+- [ ] Telegram is connected and working end-to-end
 - [ ] The hosted runtime restarts cleanly
 - [x] The environment is paper-only
-- [ ] Telegram access is explicitly allowlisted
+- [x] Telegram access is explicitly allowlisted
 - [ ] The project is ready for Milestone 2 detection workflows
+
+Current blocker:
+- The Telegram bot can send messages, so the bot token and outbound delivery are working.
+- Inbound Telegram messages currently fail at the model response step with a temporary OpenAI rate-limit message.
+- The next action is to add or switch to a lighter OpenAI fallback model, then retest DM and group mention replies.
 
 ## Notes for the next milestone
 
