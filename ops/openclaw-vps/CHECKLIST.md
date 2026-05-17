@@ -20,11 +20,15 @@ Current host:
 
 ## 2. Prepare secrets
 
-- [ ] Create a Telegram bot token with BotFather
+- [x] Create a Telegram bot token with BotFather
 - [x] Choose the LLM provider for the first hosted environment
 - [x] Gather the LLM API key
 - [ ] Keep OANDA live credentials out of this environment
 - [x] If OANDA paper credentials already exist, store them separately and do not wire them yet
+
+Current bot:
+- Telegram bot name: `Pip Chaser`
+- Telegram bot username: `@pip_chaser_agent_bot`
 
 ## 3. Install OpenClaw
 
@@ -35,7 +39,7 @@ Current host:
 - [x] Run `openclaw doctor`
 - [x] Run `openclaw gateway status`
 
-Current OpenClaw status:
+Current OpenClaw status before shutdown:
 - Installed version: `2026.5.7`
 - Gateway mode: `local`
 - Gateway auth: `token`
@@ -44,17 +48,28 @@ Current OpenClaw status:
 
 ## 4. Connect Telegram
 
+- [ ] Power the VPS back on
+- [ ] Confirm SSH works again
 - [ ] Add Telegram to OpenClaw:
   - `openclaw channels add --channel telegram --token "<telegram-bot-token>"`
-- [ ] Send a message to the bot from Telegram
-- [ ] Confirm OpenClaw receives it
-- [ ] Confirm OpenClaw can reply
+- [ ] DM the bot from the owner account
+- [ ] Capture the numeric Telegram user ID
+- [ ] Add the bot to the intended group
+- [ ] Capture the numeric group chat ID
+- [ ] Confirm OpenClaw receives the DM
+- [ ] Confirm OpenClaw can reply in DM
+- [ ] Confirm OpenClaw can reply in the allowed group when mentioned
 
 ## 5. Lock down Telegram access
 
-- [ ] Set Telegram DM policy to allow only approved users
+- [ ] Set `channels.telegram.dmPolicy` to `allowlist`
+- [ ] Set `channels.telegram.allowFrom` to the owner's numeric Telegram user ID
+- [ ] Set `channels.telegram.groupPolicy` to `allowlist`
+- [ ] Set `channels.telegram.groupAllowFrom` to the owner's numeric Telegram user ID
+- [ ] Add the allowed group to `channels.telegram.groups`
+- [ ] Set the allowed group to `requireMention: true`
+- [ ] Set `commands.ownerAllowFrom` to `telegram:<owner-id>`
 - [ ] Prefer explicit allowlists over open access
-- [ ] If using a group, explicitly allow the group and allowed senders
 - [ ] Keep execution permissions narrow from the start
 
 OpenClaw Telegram docs currently recommend:
@@ -65,10 +80,14 @@ OpenClaw Telegram docs currently recommend:
 ## 6. Verify hosted runtime health
 
 - [ ] Confirm OpenClaw survives a service restart
-- [ ] Confirm Telegram still works after restart
+- [ ] Confirm Telegram still works after service restart
+- [ ] Confirm a non-allowed sender does not trigger owner-only behavior
+- [ ] Confirm a non-allowed group does not trigger the bot
 - [x] Confirm OpenClaw still sees the selected LLM provider
 - [x] Confirm no paper/live credential mix-up exists
 - [x] Record the final VPS hostname/IP and access method
+- [ ] Reboot the VPS
+- [ ] Confirm OpenClaw and Telegram recover after full reboot
 
 Access method:
 - SSH tunnel: `ssh -N -L 18789:127.0.0.1:18789 root@91.99.75.11`
@@ -81,16 +100,23 @@ Milestone 1 is done when:
 - [ ] Telegram is connected and working
 - [ ] The hosted runtime restarts cleanly
 - [x] The environment is paper-only
-- [ ] The project is ready for Milestone 2: Strategy Skill
+- [ ] Telegram access is explicitly allowlisted
+- [ ] The project is ready for Milestone 2 detection workflows
 
 ## Notes for the next milestone
 
-The strategy PDF currently implies these later Milestone 2 requirements:
-- primary timeframe: 4H
-- optional confirmation timeframes: 1H, 30M, 15M
-- wick rejection at support/resistance
-- confirmation candle must not exceed the threshold beyond the prior candle
-- fixed stop-loss and take-profit doctrine
-- drawdown alerts at 20%, 40%, and 60% of stop distance
+The current strategy PDF defines `Step 1: Detection`, not a full trading doctrine.
 
-Those belong in the strategy skill, not in the VPS setup.
+Milestone 2 should therefore encode:
+- 5-candle bullish and bearish fractal structure
+- supported timeframes: `15m`, `1h`, `4h`, `Daily`
+- support/resistance interpretation
+- reversal, breakout, and trend-confirmation interpretation
+- indicator context using `LuxAlgo - Long Wick Detector` and `Williams Trailing Stops`
+- plain-English Telegram alert drafting
+
+Milestone 2 should not invent:
+- entry rules
+- stop-loss rules
+- take-profit rules
+- broker execution rules
