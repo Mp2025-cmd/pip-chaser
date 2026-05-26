@@ -36,7 +36,7 @@ Goal: get the always-on runtime in place on a Linux VPS.
 - [x] Connect Telegram to OpenClaw
 - [x] Capture the numeric Telegram user ID for allowlisting
 - [x] Capture the allowed group chat ID for allowlisting
-- [x] Lock Telegram down to allowlisted DM + one allowlisted group
+- [x] Lock Telegram down to owner-only DM + one allowlisted group
 - [x] Verify OpenClaw can send Telegram messages
 - [x] Verify inbound Telegram DMs produce agent replies
 - [x] Verify inbound allowed-group mentions produce agent replies
@@ -47,13 +47,14 @@ Goal: get the always-on runtime in place on a Linux VPS.
 
 Definition of done:
 - A hosted OpenClaw instance is reachable through Telegram
-- Telegram access is narrowed to the intended owner and group
+- Telegram access is narrowed to owner-only DMs and the intended group
 - The environment is paper-only and secrets are stored safely
 
 Current note:
 - OpenClaw is installed on the Hetzner VPS and upgraded to `2026.5.12`
 - The dedicated Telegram bot is connected as `@pip_chaser_agent_bot`
 - Owner Telegram user ID and the `Pip Chasers` group chat ID have been captured and allowlisted
+- DMs stay owner-only; group members can interact by mentioning the bot inside the approved group
 - OpenClaw can send outbound Telegram messages to both DM and the allowed group
 - Resolved blocker: the old API key/model path hit a Codex/OpenAI quota limit, so the OpenAI API key was replaced and the provider cooldown state was cleared
 - Current model path: `openai/gpt-5-mini` with `openai/gpt-5-nano` and `openai/gpt-5.4-mini` as fallbacks

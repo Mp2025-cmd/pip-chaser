@@ -65,7 +65,7 @@ Current Telegram status:
 - Bot username: `@pip_chaser_agent_bot`
 - Owner user ID: captured and allowlisted in the VPS config
 - Group chat ID: captured and allowlisted in the VPS config
-- Group mode: mention-required
+- Group mode: mention-required, available to members of the approved group
 - Resolved blocker: inbound messages previously failed because the old model/auth path hit a Codex/OpenAI quota limit
 - Current model config: `openai/gpt-5-mini` with `openai/gpt-5-nano` and `openai/gpt-5.4-mini` fallbacks
 - Current verification: model smoke test returned `api ok`, outbound Telegram works, `/new` starts a fresh DM session, and a short DM receives an agent reply
@@ -75,7 +75,7 @@ Current Telegram status:
 - [x] Set `channels.telegram.dmPolicy` to `allowlist`
 - [x] Set `channels.telegram.allowFrom` to the owner's numeric Telegram user ID
 - [x] Set `channels.telegram.groupPolicy` to `allowlist`
-- [x] Set `channels.telegram.groupAllowFrom` to the owner's numeric Telegram user ID
+- [x] Leave `channels.telegram.groupAllowFrom` unset so any member of the approved group can mention the bot
 - [x] Add the allowed group to `channels.telegram.groups`
 - [x] Set the allowed group to `requireMention: true`
 - [x] Set `commands.ownerAllowFrom` to `telegram:<owner-id>`
@@ -86,6 +86,12 @@ OpenClaw Telegram docs currently recommend:
 - `channels.telegram.dmPolicy: "allowlist"` for one-owner bots
 - `channels.telegram.allowFrom` with numeric Telegram user IDs
 - `channels.telegram.groups` for allowed group chats
+
+Current access model:
+- DMs are owner-only.
+- The approved group is group-chat-ID allowlisted.
+- Any member in the approved group can talk to the bot by mentioning it.
+- Owner-only commands remain restricted to the owner Telegram user ID.
 
 ## 6. Verify hosted runtime health
 
