@@ -39,7 +39,7 @@ Goal: get the always-on runtime in place on a Linux VPS.
 - [x] Lock Telegram down to allowlisted DM + one allowlisted group
 - [x] Verify OpenClaw can send Telegram messages
 - [x] Verify inbound Telegram DMs produce agent replies
-- [ ] Verify inbound allowed-group mentions produce agent replies
+- [x] Verify inbound allowed-group mentions produce agent replies
 - [ ] Verify owner-only command restrictions
 - [x] Verify a service restart does not break the basic OpenClaw gateway
 - [ ] Verify a restart does not break the full OpenClaw + Telegram reply loop
@@ -58,7 +58,8 @@ Current note:
 - Resolved blocker: the old API key/model path hit a Codex/OpenAI quota limit, so the OpenAI API key was replaced and the provider cooldown state was cleared
 - Current model path: `openai/gpt-5-mini` with `openai/gpt-5-nano` and `openai/gpt-5.4-mini` as fallbacks
 - Verification: OpenClaw model smoke test returned `api ok`, Telegram outbound works, and a fresh DM session replied successfully after `/new`
-- Remaining Milestone 1 work: verify the allowed group mention path, owner-only command restrictions, and full reboot recovery
+- Group mention verification is now working in the `Pip Chaser` group with Derek Ngwu
+- Remaining Milestone 1 work: verify owner-only command restrictions and full reboot recovery
 
 ## Milestone 2: Fractal Detection Skill
 Goal: encode the current PDF into a reusable OpenClaw skill focused on detection.

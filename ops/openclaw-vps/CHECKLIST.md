@@ -59,7 +59,7 @@ Current OpenClaw status:
 - [x] Confirm OpenClaw can send a DM
 - [x] Confirm OpenClaw can send to the allowed group
 - [x] Confirm inbound DM produces an agent reply
-- [ ] Confirm inbound allowed-group mention produces an agent reply
+- [x] Confirm inbound allowed-group mention produces an agent reply
 
 Current Telegram status:
 - Bot username: `@pip_chaser_agent_bot`
@@ -92,7 +92,7 @@ OpenClaw Telegram docs currently recommend:
 - [x] Confirm OpenClaw survives a service restart
 - [x] Confirm outbound Telegram still works after service restart
 - [x] Confirm inbound Telegram DMs still work after service restart
-- [ ] Confirm inbound allowed-group mentions still work after service restart
+- [x] Confirm inbound allowed-group mentions still work after service restart
 - [ ] Confirm a non-allowed sender does not trigger owner-only behavior
 - [ ] Confirm a non-allowed group does not trigger the bot
 - [x] Confirm OpenClaw still sees the selected LLM provider
@@ -109,7 +109,7 @@ Access method:
 
 Milestone 1 is done when:
 - [x] OpenClaw runs on a Linux VPS
-- [ ] Telegram is connected and working end-to-end for both DM and allowed group
+- [x] Telegram is connected and working end-to-end for both DM and allowed group
 - [ ] The hosted runtime restarts cleanly
 - [x] The environment is paper-only
 - [x] Telegram access is explicitly allowlisted
@@ -117,8 +117,8 @@ Milestone 1 is done when:
 
 Current blocker:
 - The earlier model quota blocker is resolved with the new OpenAI API key.
-- Group mention behavior still needs a clean verification pass because the v1 runtime is configured for one allowed group with `requireMention: true`.
-- After group verification, reboot the VPS once and confirm OpenClaw, Telegram, and the model path recover cleanly.
+- Group mention behavior is now verified in the `Pip Chaser` group with Derek Ngwu.
+- Reboot the VPS once and confirm OpenClaw, Telegram, and the model path recover cleanly.
 
 ## Notes for the next milestone
 
