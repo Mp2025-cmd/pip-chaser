@@ -73,7 +73,7 @@ Current Telegram status:
 ## 5. Lock down Telegram access
 
 - [x] Set `channels.telegram.dmPolicy` to `allowlist`
-- [x] Set `channels.telegram.allowFrom` to the owner's numeric Telegram user ID
+- [x] Set `channels.telegram.allowFrom` to approved numeric Telegram user IDs
 - [x] Set `channels.telegram.groupPolicy` to `allowlist`
 - [x] Leave `channels.telegram.groupAllowFrom` unset so any member of the approved group can mention the bot
 - [x] Add the allowed group to `channels.telegram.groups`
@@ -83,12 +83,12 @@ Current Telegram status:
 - [x] Keep execution permissions narrow from the start
 
 OpenClaw Telegram docs currently recommend:
-- `channels.telegram.dmPolicy: "allowlist"` for one-owner bots
+- `channels.telegram.dmPolicy: "allowlist"` for approved DM users
 - `channels.telegram.allowFrom` with numeric Telegram user IDs
 - `channels.telegram.groups` for allowed group chats
 
 Current access model:
-- DMs are owner-only.
+- DMs are allowlisted for the owner and Derek Ngwu.
 - The approved group is group-chat-ID allowlisted.
 - Any member in the approved group can talk to the bot by mentioning it.
 - Owner-only commands remain restricted to the owner Telegram user ID.
@@ -99,6 +99,7 @@ Current access model:
 - [x] Confirm outbound Telegram still works after service restart
 - [x] Confirm inbound Telegram DMs still work after service restart
 - [x] Confirm inbound allowed-group mentions still work after service restart
+- [ ] Confirm Derek Ngwu can DM the bot after allowlist update
 - [ ] Confirm a non-allowed sender does not trigger owner-only behavior
 - [ ] Confirm a non-allowed group does not trigger the bot
 - [x] Confirm OpenClaw still sees the selected LLM provider
@@ -124,6 +125,7 @@ Milestone 1 is done when:
 Current blocker:
 - The earlier model quota blocker is resolved with the new OpenAI API key.
 - Group mention behavior is now verified in the `Pip Chaser` group with Derek Ngwu.
+- Derek Ngwu's Telegram user ID is captured for DM allowlisting: `944738582`.
 - Reboot the VPS once and confirm OpenClaw, Telegram, and the model path recover cleanly.
 
 ## Notes for the next milestone
