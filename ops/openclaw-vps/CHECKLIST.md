@@ -58,7 +58,7 @@ Current OpenClaw status:
 - [x] Capture the numeric group chat ID
 - [x] Confirm OpenClaw can send a DM
 - [x] Confirm OpenClaw can send to the allowed group
-- [ ] Confirm inbound DM produces an agent reply
+- [x] Confirm inbound DM produces an agent reply
 - [ ] Confirm inbound allowed-group mention produces an agent reply
 
 Current Telegram status:
@@ -66,7 +66,9 @@ Current Telegram status:
 - Owner user ID: captured and allowlisted in the VPS config
 - Group chat ID: captured and allowlisted in the VPS config
 - Group mode: mention-required
-- Known blocker: inbound messages hit the bot, but the agent response currently returns `All models are temporarily rate-limited. Please try again in a few minutes.`
+- Resolved blocker: inbound messages previously failed because the old model/auth path hit a Codex/OpenAI quota limit
+- Current model config: `openai/gpt-5-mini` with `openai/gpt-5-nano` and `openai/gpt-5.4-mini` fallbacks
+- Current verification: model smoke test returned `api ok`, outbound Telegram works, `/new` starts a fresh DM session, and a short DM receives an agent reply
 
 ## 5. Lock down Telegram access
 
@@ -89,7 +91,8 @@ OpenClaw Telegram docs currently recommend:
 
 - [x] Confirm OpenClaw survives a service restart
 - [x] Confirm outbound Telegram still works after service restart
-- [ ] Confirm inbound Telegram replies still work after service restart
+- [x] Confirm inbound Telegram DMs still work after service restart
+- [ ] Confirm inbound allowed-group mentions still work after service restart
 - [ ] Confirm a non-allowed sender does not trigger owner-only behavior
 - [ ] Confirm a non-allowed group does not trigger the bot
 - [x] Confirm OpenClaw still sees the selected LLM provider
@@ -106,16 +109,16 @@ Access method:
 
 Milestone 1 is done when:
 - [x] OpenClaw runs on a Linux VPS
-- [ ] Telegram is connected and working end-to-end
+- [ ] Telegram is connected and working end-to-end for both DM and allowed group
 - [ ] The hosted runtime restarts cleanly
 - [x] The environment is paper-only
 - [x] Telegram access is explicitly allowlisted
 - [ ] The project is ready for Milestone 2 detection workflows
 
 Current blocker:
-- The Telegram bot can send messages, so the bot token and outbound delivery are working.
-- Inbound Telegram messages currently fail at the model response step with a temporary OpenAI rate-limit message.
-- The next action is to add or switch to a lighter OpenAI fallback model, then retest DM and group mention replies.
+- The earlier model quota blocker is resolved with the new OpenAI API key.
+- Group mention behavior still needs a clean verification pass because the v1 runtime is configured for one allowed group with `requireMention: true`.
+- After group verification, reboot the VPS once and confirm OpenClaw, Telegram, and the model path recover cleanly.
 
 ## Notes for the next milestone
 
