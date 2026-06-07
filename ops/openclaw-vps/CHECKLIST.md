@@ -99,7 +99,7 @@ Current access model:
 - [x] Confirm outbound Telegram still works after service restart
 - [x] Confirm inbound Telegram DMs still work after service restart
 - [x] Confirm inbound allowed-group mentions still work after service restart
-- [ ] Confirm Derek Ngwu can DM the bot after allowlist update
+- [x] Confirm Derek Ngwu can DM the bot after allowlist update
 - [ ] Confirm a non-allowed sender does not trigger owner-only behavior
 - [ ] Confirm a non-allowed group does not trigger the bot
 - [x] Confirm OpenClaw still sees the selected LLM provider
@@ -117,7 +117,7 @@ Access method:
 Milestone 1 is done when:
 - [x] OpenClaw runs on a Linux VPS
 - [x] Telegram is connected and working end-to-end for both DM and allowed group
-- [ ] The hosted runtime restarts cleanly
+- [x] The hosted runtime restarts cleanly
 - [x] The environment is paper-only
 - [x] Telegram access is explicitly allowlisted
 - [ ] The project is ready for Milestone 2 detection workflows
@@ -125,7 +125,8 @@ Milestone 1 is done when:
 Current blocker:
 - The earlier model quota blocker is resolved with the new OpenAI API key.
 - Group mention behavior is now verified in the `Pip Chaser` group with Derek Ngwu.
-- Derek Ngwu's Telegram user ID is captured for DM allowlisting: `944738582`.
+- Derek Ngwu's Telegram user ID is captured and applied for DM allowlisting: `944738582`.
+- Service restart plus Telegram reply loop is verified after the allowlist update.
 - Reboot the VPS once and confirm OpenClaw, Telegram, and the model path recover cleanly.
 
 ## Notes for the next milestone

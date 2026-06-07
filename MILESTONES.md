@@ -42,7 +42,7 @@ Goal: get the always-on runtime in place on a Linux VPS.
 - [x] Verify inbound allowed-group mentions produce agent replies
 - [ ] Verify owner-only command restrictions
 - [x] Verify a service restart does not break the basic OpenClaw gateway
-- [ ] Verify a restart does not break the full OpenClaw + Telegram reply loop
+- [x] Verify a restart does not break the full OpenClaw + Telegram reply loop
 - [ ] Verify a VPS reboot does not break the basic OpenClaw + Telegram runtime
 
 Definition of done:
@@ -60,7 +60,8 @@ Current note:
 - Current model path: `openai/gpt-5-mini` with `openai/gpt-5-nano` and `openai/gpt-5.4-mini` as fallbacks
 - Verification: OpenClaw model smoke test returned `api ok`, Telegram outbound works, and a fresh DM session replied successfully after `/new`
 - Group mention verification is now working in the `Pip Chaser` group with Derek Ngwu
-- Derek Ngwu's Telegram user ID is captured for DM allowlisting: `944738582`
+- Derek Ngwu's Telegram user ID is captured and applied for DM allowlisting: `944738582`
+- Service restart plus Telegram reply loop is verified after the allowlist update
 - Remaining Milestone 1 work: verify owner-only command restrictions and full reboot recovery
 
 ## Milestone 2: Fractal Detection Skill
