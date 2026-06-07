@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mp2025-cmd/pip-chaser/schemas/market-context.schema.json",
+  "title": "Pip Chaser Market Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workflow_run_id",
+    "symbol",
+    "timeframe",
+    "candles",
+    "source",
+    "requested_by"
+  ],
+  "properties": {
+    "workflow_run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "symbol": {
+      "type": "string",
+      "enum": ["EUR_USD", "GBP_USD", "USD_JPY"]
+    },
+    "timeframe": {
+      "type": "string",
+      "enum": ["15m", "1h", "4h", "Daily"]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "mode"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "examples": ["manual_sample", "oanda_candles", "tradingview_context"]
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["manual", "paper_data", "screenshot_context"]
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "requested_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channel", "user_id"],
+      "properties": {
+        "channel": {
+          "type": "string",
+          "enum": ["telegram", "scheduled", "manual_test"]
+        },
+        "user_id": {
+          "type": "string"
+        },
+        "chat_id": {
+          "type": "string"
+        },
+        "message_id": {
+          "type": "string"
+        }
+      }
+    },
+    "candles": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["timestamp", "open", "high", "low", "close", "complete"],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "open": {
+            "type": "number"
+          },
+          "high": {
+            "type": "number"
+          },
+          "low": {
+            "type": "number"
+          },
+          "close": {
+            "type": "number"
+          },
+          "volume": {
+            "type": ["number", "null"]
+          },
+          "complete": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "support_resistance_context": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "near_support": {
+          "type": ["boolean", "null"]
+        },
+        "near_resistance": {
+          "type": ["boolean", "null"]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "trend_context": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": ["up", "down", "sideways", "unknown"]
+        },
+        "moving_average_confirmation": {
+          "type": "string",
+          "enum": ["aligned", "conflicting", "missing", "unknown"]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "indicator_context": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "rsi_confirmation": {
+          "type": "string",
+          "enum": ["aligned", "conflicting", "missing", "unknown"]
+        },
+        "macd_confirmation": {
+          "type": "string",
+          "enum": ["aligned", "conflicting", "missing", "unknown"]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

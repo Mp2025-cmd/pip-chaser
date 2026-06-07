@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Mp2025-cmd/pip-chaser/schemas/detection-result.schema.json",
+  "title": "Pip Chaser Detection Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "workflow_run_id",
+    "valid_detection",
+    "direction",
+    "timeframe",
+    "reasoning_summary",
+    "confirmation_notes",
+    "telegram_notification_draft",
+    "missing_information"
+  ],
+  "properties": {
+    "workflow_run_id": {
+      "type": "string"
+    },
+    "valid_detection": {
+      "type": "boolean"
+    },
+    "classification": {
+      "type": "string",
+      "enum": ["valid", "weak", "invalid"]
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["bullish", "bearish", "none"]
+    },
+    "symbol": {
+      "type": "string"
+    },
+    "timeframe": {
+      "type": "string",
+      "enum": ["15m", "1h", "4h", "Daily", "unknown"]
+    },
+    "center_candle_timestamp": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "reasoning_summary": {
+      "type": "string"
+    },
+    "confirmation_notes": {
+      "type": "string"
+    },
+    "telegram_notification_draft": {
+      "type": "string"
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -94,34 +94,45 @@ Current note:
 ## Milestone 3: Market Context Inputs
 Goal: define and fetch the minimum data the workflows need.
 
-- [ ] Decide the minimum symbols to support first
-- [ ] Decide the minimum timeframes to support first
-- [ ] Define the structured setup-validation input format
+- [x] Decide the minimum symbols to support first
+- [x] Decide the minimum timeframes to support first
+- [x] Define the structured setup-validation input format
 - [ ] Pull candle data for the supported timeframes
-- [ ] Normalize candle data into the workflow input format
-- [ ] Decide whether to include chart images in v1
-- [ ] Evaluate reusable MCP/context tools for market context
-- [ ] Reject tools that add noise without helping the detection logic
+- [x] Normalize candle data into the workflow input format
+- [x] Decide whether to include chart images in v1
+- [x] Evaluate reusable MCP/context tools for market context
+- [x] Reject tools that add noise without helping the detection logic
 
 Definition of done:
 - The agent has a clean, repeatable data shape for evaluating detections
 - Real market data can flow into the validation process
 
+Current note:
+- Market context is documented in `docs/market-context-inputs.md`
+- JSON schemas live in `schemas/market-context.schema.json` and `schemas/detection-result.schema.json`
+- V1 symbols are `EUR_USD`, `GBP_USD`, and `USD_JPY`
+- Live candle pulling remains pending until a market-data adapter is wired and tested
+
 ## Milestone 4: Lobster Workflow Design
 Goal: define deterministic detection workflows before allowing execution.
 
-- [ ] Implement `market_scan`
-- [ ] Implement `validate_setup`
-- [ ] Implement `trade_explain`
-- [ ] Implement `daily_summary`
+- [x] Scaffold `market_scan`
+- [x] Scaffold `validate_setup`
+- [x] Scaffold `trade_explain`
+- [x] Scaffold `daily_summary`
 - [-] Defer `paper_trade_execute` until a later execution doctrine exists
-- [ ] Document the input/output contract for each workflow
-- [ ] Add checkpoints so no future execution happens before validation
-- [ ] Add workflow-level tracing so each run is identifiable
+- [x] Document the input/output contract for each workflow
+- [x] Add checkpoints so no future execution happens before validation
+- [x] Add workflow-level tracing so each run is identifiable
 
 Definition of done:
 - The main detection workflows exist and run in the correct order
 - Validation and explanation can run without any broker execution
+
+Current note:
+- Workflow contracts are documented in `docs/lobster-workflows.md`
+- Lobster scaffolds live in `workflows/lobster`
+- The scaffolds intentionally call a future small `pip-chaser` JSON CLI; runtime execution is pending until that CLI or equivalent OpenClaw tools exist
 
 ## Milestone 5: Risk and Safety Layer
 Goal: prepare safety rules before broker execution exists.

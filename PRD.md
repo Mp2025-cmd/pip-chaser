@@ -213,12 +213,16 @@ Each workflow should make clear:
 - what tools it can call
 - what counts as enough evidence to alert
 
+The workflow contracts live in [docs/lobster-workflows.md](docs/lobster-workflows.md).
+
 ### Phase 4: Market Context Inputs
 Add:
 - candle data collection
 - timeframe normalization
 - optional chart context
 - indicator context where available
+
+The market context contract lives in [docs/market-context-inputs.md](docs/market-context-inputs.md).
 
 ### Phase 5: Later Execution Boundary
 Only after a later strategy document defines actual trade rules:

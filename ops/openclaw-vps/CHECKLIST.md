@@ -171,3 +171,21 @@ Safety source of truth:
 
 Telegram UX source of truth:
 - `docs/telegram-ux.md`
+
+## 10. Market context and workflow contracts
+
+- [x] Document v1 symbols and timeframes
+- [x] Document market context input shape
+- [x] Add market context JSON schema
+- [x] Add detection result JSON schema
+- [x] Document Lobster workflow contracts
+- [x] Add Lobster workflow scaffolds
+- [ ] Wire a live market-data adapter
+- [ ] Make the Lobster scaffolds runnable against real JSON commands
+
+Source files:
+- `docs/market-context-inputs.md`
+- `docs/lobster-workflows.md`
+- `schemas/market-context.schema.json`
+- `schemas/detection-result.schema.json`
+- `workflows/lobster/`
