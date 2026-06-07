@@ -126,15 +126,20 @@ Definition of done:
 ## Milestone 5: Risk and Safety Layer
 Goal: prepare safety rules before broker execution exists.
 
-- [ ] Define what later broker execution will require before activation
-- [ ] Define pause mode behavior
-- [ ] Define duplicate-alert and duplicate-workflow protection rules
-- [ ] Define paper/live credential separation rules
-- [ ] Ensure every future broker action will require a recorded reason
+- [x] Define what later broker execution will require before activation
+- [x] Define pause mode behavior
+- [x] Define duplicate-alert and duplicate-workflow protection rules
+- [x] Define paper/live credential separation rules
+- [x] Ensure every future broker action will require a recorded reason
 
 Definition of done:
 - Paper/live separation is enforced operationally, not just by convention
 - The project is ready to add execution only after strategy doctrine expands
+
+Current note:
+- Milestone 5 is documented in `docs/risk-and-safety.md`
+- The current product remains detection-only
+- Future OANDA execution must stay blocked until strategy doctrine defines entry, stop, target, invalidation, and management rules
 
 ## Milestone 6: OANDA Execution Boundary
 Goal: create the narrow broker interface once the strategy supports execution.

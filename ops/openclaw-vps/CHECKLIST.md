@@ -146,3 +146,15 @@ Milestone 2 should not invent:
 - stop-loss rules
 - take-profit rules
 - broker execution rules
+
+## 8. Safety baseline for later execution
+
+- [x] Keep the current runtime detection-only
+- [x] Document execution activation requirements
+- [x] Document pause mode behavior
+- [x] Document duplicate-alert and duplicate-workflow protection rules
+- [x] Document paper/live credential separation rules
+- [x] Document the recorded-reason requirement for future broker actions
+
+Safety source of truth:
+- `docs/risk-and-safety.md`

@@ -110,6 +110,24 @@ When the strategy evolves beyond detection, the OANDA boundary should own:
 
 Until then, OANDA should stay out of the active runtime path.
 
+### 6) Risk and Safety Layer
+The safety layer defines what the agent is allowed to do before execution exists.
+
+Current default:
+- detection is allowed
+- explanation is allowed
+- Telegram alerts are allowed
+- broker execution is not allowed
+
+The detailed safety baseline lives in [docs/risk-and-safety.md](docs/risk-and-safety.md).
+
+Future broker execution must require:
+- explicit strategy rules for entry, stop, target, invalidation, and management
+- paper/live credential separation
+- duplicate-order protection
+- pause mode
+- a recorded reason for every broker action
+
 ## Infrastructure
 ### Recommended Setup
 The recommended version 1 setup is a Linux VPS that runs:
@@ -274,6 +292,7 @@ When activated later, it will own broker actions only.
 - group messages should not trigger the bot unless it is mentioned
 - non-allowed users should not trigger owner-only behavior
 - ambiguous user messages should be treated as questions, not commands
+- pause mode should block scans, alerts, and future broker actions
 
 ### Infrastructure issues
 - VPS restart
@@ -281,6 +300,7 @@ When activated later, it will own broker actions only.
 - temporary Telegram outage
 - stale market snapshot
 - duplicate workflow invocation
+- paper and live credentials accidentally present in the same runtime
 
 ## Recommendation
 The cleanest next version of Pip Chaser is:
