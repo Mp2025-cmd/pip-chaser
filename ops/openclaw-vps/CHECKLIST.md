@@ -138,7 +138,7 @@ Milestone 2 should therefore encode:
 - supported timeframes: `15m`, `1h`, `4h`, `Daily`
 - support/resistance interpretation
 - reversal, breakout, and trend-confirmation interpretation
-- indicator context using `LuxAlgo - Long Wick Detector` and `Williams Trailing Stops`
+- indicator confirmation using `Moving Averages`, `RSI`, and `MACD`
 - plain-English Telegram alert drafting
 
 Milestone 2 should not invent:

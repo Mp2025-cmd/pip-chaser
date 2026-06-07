@@ -46,6 +46,8 @@ Fractals can suggest that price may be about to change direction.
 ### 2. Support and resistance
 Fractals can mark levels where price may bounce or break.
 
+The revised note also says a fractal at resistance can signal a potential bullish reversal, and a fractal at support can signal a bearish reversal. That wording is directionally unusual, so treat it as a strategy-owner confirmation item rather than a standalone rule.
+
 ### 3. Trend confirmation
 The PDF says:
 - in an uptrend, a bullish fractal can help confirm continuation
@@ -59,11 +61,16 @@ The PDF includes a breakout interpretation:
 
 This is useful as context for later workflows, but the current document still does not define full broker entry or risk-management rules for autonomous execution.
 
-## Indicator context
+## Indicator confirmation
 
-The screenshot on page 1 shows two TradingView indicators that should be treated as context enhancers, not replacements for the fractal structure.
+The revised strategy note says confirmation tools should increase precision, but they do not replace the 5-candle fractal structure.
 
-Indicators visible with confidence:
+Preferred confirmation tools from the revised strategy note:
+- `Moving Averages`: filter signals by trend alignment
+- `RSI`: confirm momentum and help reduce false signals
+- `MACD`: confirm momentum and help reduce false signals
+
+Earlier screenshot context also showed these TradingView indicators. Treat them as visible chart context when present, but do not make them mandatory unless the strategy owner confirms they are required:
 - `LuxAlgo - Long Wick Detector`
 - `Williams Trailing Stops`
 
@@ -81,20 +88,34 @@ A valid detection should be explainable in terms of:
 - the timeframe
 - nearby support or resistance context
 - whether the setup looks more like reversal, breakout, or trend confirmation
-- whether indicator context strengthens or weakens confidence
+- whether Moving Average trend context strengthens or weakens confidence
+- whether RSI or MACD momentum context confirms or contradicts the detection
 
 ## Weak or invalid detection guidance
 
 Treat the signal as weak when:
 - the fractal structure exists but support/resistance is unclear
 - the trend context is mixed
-- the indicator context is missing or not helpful
+- Moving Average, RSI, or MACD confirmation is missing or not helpful
+- the pattern is close to a textbook fractal but has real-world imperfections that need human review
 
 Treat the signal as invalid when:
 - fewer than five candles are available
 - the center candle is not the true extreme
 - the timeframe is not one of the supported timeframes
 - the context is too incomplete to justify a user alert
+
+## Advantages and limitations from the revised note
+
+Advantages:
+- fractals are simple to spot on price charts
+- they can help identify pivot points and support/resistance levels
+- signals are based on past candles, so the strategy note describes them as not repainting
+
+Limitations:
+- fractals can generate false signals
+- confirmation tools are needed to reduce noise
+- real-world fractals may deviate from the ideal 5-candle pattern
 
 ## What the current PDF does not define
 

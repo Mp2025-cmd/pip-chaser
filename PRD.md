@@ -69,7 +69,7 @@ For this document, the skill should encode:
 - the supported timeframes: `15m`, `1h`, `4h`, `Daily`
 - support/resistance interpretation
 - reversal, breakout, and trend-confirmation interpretation
-- indicator confirmation guidance using the visible TradingView indicators
+- indicator confirmation guidance using Moving Averages, RSI, and MACD
 
 It should not invent:
 - entry prices

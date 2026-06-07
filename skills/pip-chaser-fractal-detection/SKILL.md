@@ -41,7 +41,8 @@ When evaluating a detection, always check:
 2. whether the timeframe is one of the supported timeframes
 3. whether support/resistance context strengthens or weakens the signal
 4. whether the signal is better described as reversal, breakout, or trend confirmation
-5. whether the visible indicator context strengthens or weakens confidence
+5. whether Moving Average trend context strengthens or weakens confidence
+6. whether RSI or MACD momentum context confirms or contradicts the detection
 
 ## Valid, weak, and invalid outcomes
 
@@ -54,7 +55,7 @@ Mark a detection as `valid` only when:
 Mark a detection as `weak` when:
 - the fractal structure exists but support/resistance context is weak
 - the fractal structure exists but trend context is mixed
-- indicator confirmation is missing or inconclusive
+- Moving Average, RSI, or MACD confirmation is missing or inconclusive
 
 Mark a detection as `invalid` when:
 - fewer than 5 candles are available
@@ -96,4 +97,5 @@ Read [references/strategy-reference.md](references/strategy-reference.md) when y
 - the detection purpose
 - the fractal definitions
 - breakout/reversal/trend-confirmation interpretation
-- visible indicator names and partially readable settings
+- confirmation guidance using Moving Averages, RSI, and MACD
+- earlier visible TradingView indicator names when screenshot context matters
