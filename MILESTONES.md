@@ -160,17 +160,22 @@ Definition of done:
 ## Milestone 7: Telegram User Experience
 Goal: make the bot useful and understandable from chat.
 
-- [ ] Implement status replies
-- [ ] Implement detection inspection replies
-- [ ] Implement explanation replies
-- [ ] Implement pause/resume commands
-- [ ] Implement scan-on-demand commands
-- [ ] Make ambiguous commands safe by default
-- [ ] Ensure questions are not accidentally treated as trade orders
-- [ ] Send clean detection alerts back to Telegram
+- [x] Define status replies
+- [x] Define detection inspection replies
+- [x] Define explanation replies
+- [x] Define pause/resume commands
+- [x] Define scan-on-demand commands
+- [x] Make ambiguous commands safe by default
+- [x] Ensure questions are not accidentally treated as trade orders
+- [x] Define clean detection alerts back to Telegram
 
 Definition of done:
 - The user can inspect, understand, and control the detection agent from Telegram
+
+Current note:
+- Milestone 7 is documented in `docs/telegram-ux.md`
+- The current runtime can already respond in Telegram
+- Runtime wiring for `/scan`, `/status`, `/pause`, and `/resume` should happen after Lobster workflows and market context inputs exist
 
 ## Milestone 8: Journaling, Logs, and Review
 Goal: make every decision auditable and reviewable.

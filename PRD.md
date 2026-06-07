@@ -274,6 +274,8 @@ This layer owns:
 - inspection
 - delivery of alerts and summaries
 
+The Telegram UX contract lives in [docs/telegram-ux.md](docs/telegram-ux.md).
+
 ### OANDA Boundary
 Deferred for now.
 When activated later, it will own broker actions only.
@@ -293,6 +295,7 @@ When activated later, it will own broker actions only.
 - non-allowed users should not trigger owner-only behavior
 - ambiguous user messages should be treated as questions, not commands
 - pause mode should block scans, alerts, and future broker actions
+- casual questions should never be treated as trade orders
 
 ### Infrastructure issues
 - VPS restart

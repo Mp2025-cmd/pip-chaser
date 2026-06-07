@@ -1,0 +1,259 @@
+# Pip Chaser Telegram UX
+
+This document defines how the Pip Chaser bot should behave in Telegram.
+
+The goal is to make the Telegram group feel like a simple control room: the team can ask what the bot is doing, request detection explanations, pause activity, and inspect alerts without accidentally triggering unsafe behavior.
+
+## Current Mode
+
+Pip Chaser is currently `detection only`.
+
+Allowed:
+- answer questions
+- explain the fractal strategy
+- discuss valid, weak, or invalid detections
+- draft detection alerts
+- respond in the approved Telegram group when mentioned
+
+Not allowed:
+- place trades
+- claim that a trade was placed
+- invent entry, stop-loss, or take-profit rules
+- treat casual chat as a trading command
+
+## Access Model
+
+DMs:
+- only approved DM users can talk to the bot privately
+- current approved DM users are the owner and Derek Ngwu
+
+Group:
+- the bot responds in the approved group only when mentioned
+- group members should use `@pip_chaser_agent_bot`
+- owner-only commands should still require the owner allowlist
+
+## Command List
+
+### `/status`
+
+Purpose: show whether the bot is healthy and what mode it is in.
+
+Who can use it:
+- approved DM users
+- approved group members when mentioning the bot
+
+Example:
+
+```text
+Pip Chaser status:
+- mode: detection only
+- Telegram: connected
+- OpenClaw: active
+- execution: disabled
+- pause mode: off
+- last check: no recent errors
+```
+
+### `/pause`
+
+Purpose: stop scans, alerts, and any future broker action.
+
+Who can use it:
+- owner only
+
+Example:
+
+```text
+Paused.
+
+I can still answer questions and explain old detections, but I will not start scans or send new detection alerts until resumed.
+```
+
+### `/resume`
+
+Purpose: leave pause mode.
+
+Who can use it:
+- owner only
+
+Example:
+
+```text
+Resumed.
+
+Detection mode is active again. Broker execution is still disabled.
+```
+
+### `/scan SYMBOL`
+
+Purpose: request a detection scan for one symbol.
+
+Who can use it:
+- approved DM users
+- approved group members when mentioning the bot
+
+Example:
+
+```text
+@pip_chaser_agent_bot /scan EUR_USD
+```
+
+Expected reply before market-data automation exists:
+
+```text
+I can prepare a fractal detection review for EUR_USD, but live candle scanning is not wired yet.
+
+Current supported timeframes: 15m, 1h, 4h, Daily.
+```
+
+Expected reply after market-data automation exists:
+
+```text
+Scanning EUR_USD on 15m, 1h, 4h, and Daily for fractal detections.
+I will alert only if the setup has enough confirmation.
+```
+
+### `/explain`
+
+Purpose: explain the most recent detection or a detection pasted by the user.
+
+Who can use it:
+- approved DM users
+- approved group members when mentioning the bot
+
+Example:
+
+```text
+This is a weak bullish fractal on the 1h timeframe.
+
+The 5-candle structure is present, but support context is unclear and RSI/MACD confirmation was not provided.
+```
+
+### `/help`
+
+Purpose: show available commands and safe limits.
+
+Who can use it:
+- approved DM users
+- approved group members when mentioning the bot
+
+Example:
+
+```text
+Pip Chaser commands:
+- /status: show bot mode and health
+- /scan SYMBOL: request a detection scan
+- /explain: explain a setup or recent alert
+- /pause: owner-only safety stop
+- /resume: owner-only resume
+
+Current mode: detection only. I do not place trades.
+```
+
+## Detection Alert Format
+
+Alerts should be short, plain English, and safe.
+
+Template:
+
+```text
+Fractal detection
+
+Symbol: EUR_USD
+Timeframe: 1h
+Direction: bullish
+Confidence: valid / weak / invalid
+
+Why:
+- 5-candle bullish fractal structure is present
+- center candle has the lowest low
+- support/resistance context supports the read
+- Moving Average, RSI, or MACD confirmation: available / missing / conflicting
+
+Note: detection only. No trade has been placed.
+```
+
+## Ambiguous Message Handling
+
+If a message is unclear, the bot should treat it as a question, not a command.
+
+Examples:
+
+```text
+"Should we buy EURUSD?"
+```
+
+Safe reply:
+
+```text
+I can review EUR_USD for a fractal detection, but I cannot recommend or place a trade.
+
+If you want a detection check, say:
+/scan EUR_USD
+```
+
+```text
+"Take it"
+```
+
+Safe reply:
+
+```text
+I will not treat that as a trade command.
+
+Current mode is detection only. No broker execution is enabled.
+```
+
+## Owner-Only Behavior
+
+Owner-only commands:
+- `/pause`
+- `/resume`
+- future execution unlocks
+- future credential checks
+- future live-mode actions
+
+If a non-owner uses an owner-only command:
+
+```text
+That command is owner-only.
+
+I can still answer questions or explain detections.
+```
+
+## Error Replies
+
+Market data missing:
+
+```text
+I do not have enough candle data to validate this setup.
+
+Need: 5 candles on one supported timeframe plus trend and confirmation context.
+```
+
+Unsupported timeframe:
+
+```text
+That timeframe is not supported yet.
+
+Supported timeframes: 15m, 1h, 4h, Daily.
+```
+
+Paused:
+
+```text
+Pip Chaser is paused.
+
+I can answer questions, but I will not start scans or send new alerts until resumed.
+```
+
+## UX Safety Rules
+
+- Always say `detection only` when a user asks about trades.
+- Never imply that a trade was placed.
+- Never invent SL, TP, lot size, or entry price.
+- Never treat casual group chat as a command.
+- In groups, respond only when mentioned.
+- Keep replies short enough for Telegram.
+- Prefer plain English over trading jargon.
+- Include missing information instead of guessing.

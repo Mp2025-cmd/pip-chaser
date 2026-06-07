@@ -158,3 +158,16 @@ Milestone 2 should not invent:
 
 Safety source of truth:
 - `docs/risk-and-safety.md`
+
+## 9. Telegram UX contract
+
+- [x] Document status replies
+- [x] Document detection inspection replies
+- [x] Document explanation replies
+- [x] Document pause/resume commands
+- [x] Document scan-on-demand commands
+- [x] Document safe handling for ambiguous messages
+- [x] Document clean detection alert format
+
+Telegram UX source of truth:
+- `docs/telegram-ux.md`
