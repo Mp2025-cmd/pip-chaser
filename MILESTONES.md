@@ -221,6 +221,8 @@ Goal: run the full system continuously and learn from real behavior.
 - [x] Add duplicate-alert detection for repeated fractal candidates
 - [x] Add daily trial summaries
 - [x] Document the detection-trial review process
+- [x] Add manual Telegram delivery for valid non-duplicate signals
+- [x] Add Telegram delivery dry-run mode
 - [ ] Run the bot continuously in detection mode
 - [ ] Review alert quality
 - [ ] Review missed detections
@@ -236,6 +238,8 @@ Definition of done:
 Current note:
 - The trial workflow is documented in `docs/detection-trial.md`
 - `./bin/pip-chaser workflows market-scan --journal` can scan live OANDA demo candles and journal the results
+- `./bin/pip-chaser workflows market-scan --journal --send-telegram` can send valid non-duplicate signals to Telegram
+- `./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run` previews delivery without posting
 - `./bin/pip-chaser workflows daily-summary` creates a review summary from the journal
 - Milestone 9 is now ready for live observation, but it is not complete until the team reviews real scan history
 

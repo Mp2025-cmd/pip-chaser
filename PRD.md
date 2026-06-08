@@ -299,6 +299,7 @@ The journal contract lives in [docs/journaling.md](docs/journaling.md).
 The detection trial owns:
 - repeated demo-data scans
 - duplicate-alert checks
+- valid-signal delivery to Telegram
 - daily review summaries
 - team review notes for false positives, missed detections, and unclear explanations
 

@@ -24,6 +24,18 @@ Run a smaller scan:
 ./bin/pip-chaser workflows market-scan --symbols EUR_USD --timeframes 15m,1h --journal
 ```
 
+Preview Telegram signal delivery without sending:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run
+```
+
+Send valid signals to the approved Telegram group:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram
+```
+
 Review the journal:
 
 ```bash
@@ -55,7 +67,28 @@ For each pair/timeframe it:
 - detects the most recent complete 5-candle fractal
 - marks the setup as `valid`, `weak`, or `invalid`
 - flags duplicate alerts using symbol, timeframe, direction, and center candle timestamp
+- sends Telegram alerts only for non-duplicate `valid` detections when delivery is enabled
 - writes workflow and setup-decision entries to the local journal
+
+## Signal Delivery
+
+Signal delivery uses the Telegram Bot API directly.
+
+Required local environment variables:
+
+```bash
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+TELEGRAM_SIGNAL_CHAT_ID=your-approved-group-chat-id
+```
+
+Delivery rules:
+
+- `valid` detections are sent.
+- `weak` detections are journaled but skipped.
+- `invalid` detections are journaled but skipped.
+- duplicate detections are journaled but skipped.
+- every sent, skipped, dry-run, or failed delivery is journaled
+- `--send-telegram` requires `--journal`
 
 ## How To Review Results
 
@@ -75,6 +108,7 @@ Look for:
 - No entry, stop-loss, take-profit, or position sizing.
 - No live cash credentials.
 - Every scan should be journaled.
+- Telegram delivery should be tested with `--dry-run` before real sending.
 - Any confusing alert should become a review note before tuning the skill or workflow.
 
 ## Exit Criteria
@@ -86,4 +120,3 @@ Milestone 9 is complete only after the team has reviewed real scan history and c
 - explanations are understandable
 - false positives and missed detections are being tracked
 - the next tuning steps are clear
-

@@ -47,6 +47,19 @@ Append any JSON payload manually:
 ./bin/pip-chaser journal append --event-type setup_decision < detection-result.json
 ```
 
+Telegram delivery events are journaled automatically when signal delivery is enabled:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram
+```
+
+Delivery event statuses:
+
+- `sent`
+- `dry_run`
+- `skipped`
+- `failed`
+
 List recent entries:
 
 ```bash
@@ -85,5 +98,6 @@ Each line is a JSON object with:
 
 - Journal entries are detection-only.
 - Journal entries must not contain API keys.
+- Telegram delivery journals status and message IDs, never bot tokens.
 - Broker execution is still disabled.
 - The journal records reasoning; it does not approve trades.

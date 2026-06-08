@@ -13,6 +13,7 @@ Allowed:
 - explain the fractal strategy
 - discuss valid, weak, or invalid detections
 - draft detection alerts
+- send valid detection signals when the manual scan command enables Telegram delivery
 - respond in the approved Telegram group when mentioned
 
 Not allowed:
@@ -113,6 +114,18 @@ Scanning EUR_USD on 15m, 1h, 4h, and Daily for fractal detections.
 I will alert only if the setup has enough confirmation.
 ```
 
+Current manual delivery command:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram
+```
+
+Dry-run delivery test:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run
+```
+
 ### `/explain`
 
 Purpose: explain the most recent detection or a detection pasted by the user.
@@ -150,27 +163,24 @@ Pip Chaser commands:
 Current mode: detection only. I do not place trades.
 ```
 
-## Detection Alert Format
+## Signal Alert Format
 
 Alerts should be short, plain English, and safe.
 
 Template:
 
 ```text
-Fractal detection
+Pip Chaser Signal
 
-Symbol: EUR_USD
+Pair: EUR_USD
 Timeframe: 1h
-Direction: bullish
-Confidence: valid / weak / invalid
+Direction: Bullish
+Confidence: Valid
 
 Why:
-- 5-candle bullish fractal structure is present
-- center candle has the lowest low
-- support/resistance context supports the read
-- Moving Average, RSI, or MACD confirmation: available / missing / conflicting
+Valid bullish fractal on EUR_USD 1h: the center candle is the lowest low within a complete 5-candle window.
 
-Note: detection only. No trade has been placed.
+Note: Detection only. No trade has been placed.
 ```
 
 ## Ambiguous Message Handling

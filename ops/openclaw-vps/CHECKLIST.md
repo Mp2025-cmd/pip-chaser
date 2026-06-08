@@ -216,6 +216,8 @@ Source of truth:
 - [x] Add journal-backed duplicate-alert review
 - [x] Add daily trial summary command
 - [x] Document how to review the trial
+- [x] Add manual Telegram signal delivery for valid non-duplicate detections
+- [x] Add Telegram delivery dry-run mode
 - [ ] Run continuous detection mode on the hosted runtime
 - [ ] Review alert quality with the team
 - [ ] Track missed detections and false positives
@@ -228,4 +230,16 @@ Manual trial command:
 
 ```bash
 ./bin/pip-chaser workflows market-scan --journal
+```
+
+Manual signal delivery command:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram
+```
+
+Safe preview:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run
 ```
