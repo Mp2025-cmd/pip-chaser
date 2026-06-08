@@ -6,10 +6,7 @@ args:
     default: null
 steps:
   - id: validate_detection_result
-    command: "pip-chaser schemas validate --schema schemas/detection-result.schema.json --json"
+    command: "./bin/pip-chaser schemas validate --schema schemas/detection-result.schema.json"
   - id: draft_message
-    command: "pip-chaser telegram draft-detection-alert --json"
+    command: "./bin/pip-chaser workflows trade-explain"
     stdin: $validate_detection_result.json
-  - id: safety_check
-    command: "pip-chaser telegram safety-check-message --json"
-    stdin: $draft_message.json

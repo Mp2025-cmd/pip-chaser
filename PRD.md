@@ -295,6 +295,15 @@ The journal owns:
 
 The journal contract lives in [docs/journaling.md](docs/journaling.md).
 
+### Detection Trial Layer
+The detection trial owns:
+- repeated demo-data scans
+- duplicate-alert checks
+- daily review summaries
+- team review notes for false positives, missed detections, and unclear explanations
+
+The trial contract lives in [docs/detection-trial.md](docs/detection-trial.md).
+
 ## Edge Cases to Address
 ### Strategy and data issues
 - only 4 candles are available, so the fractal is incomplete

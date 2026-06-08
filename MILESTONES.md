@@ -138,7 +138,8 @@ Current note:
 - Lobster scaffolds live in `workflows/lobster`
 - `market_scan` now points at the local `bin/pip-chaser` OANDA candle adapter
 - `validate_setup` now runs real fractal classification from market-context JSON
-- Runtime execution remains pending for full market scanning, Telegram drafting, and journal commands
+- Runtime execution now exists for market scanning, setup validation, trade explanation drafts, daily summaries, and journal commands
+- Telegram delivery commands are still pending
 
 ## Milestone 5: Risk and Safety Layer
 Goal: prepare safety rules before broker execution exists.
@@ -215,6 +216,11 @@ Current note:
 ## Milestone 9: Detection Trial
 Goal: run the full system continuously and learn from real behavior.
 
+- [x] Add a repeatable detection-trial scan command
+- [x] Journal each trial scan result
+- [x] Add duplicate-alert detection for repeated fractal candidates
+- [x] Add daily trial summaries
+- [x] Document the detection-trial review process
 - [ ] Run the bot continuously in detection mode
 - [ ] Review alert quality
 - [ ] Review missed detections
@@ -226,6 +232,12 @@ Goal: run the full system continuously and learn from real behavior.
 
 Definition of done:
 - The detection loop behaves predictably enough to justify adding execution logic later
+
+Current note:
+- The trial workflow is documented in `docs/detection-trial.md`
+- `./bin/pip-chaser workflows market-scan --journal` can scan live OANDA demo candles and journal the results
+- `./bin/pip-chaser workflows daily-summary` creates a review summary from the journal
+- Milestone 9 is now ready for live observation, but it is not complete until the team reviews real scan history
 
 ## Milestone 10: Live Trading Readiness Review
 Goal: decide whether the project is ready to touch real money in later phases.

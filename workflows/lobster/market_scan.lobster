@@ -10,16 +10,7 @@ args:
       user_id: "unknown"
 steps:
   - id: validate_request
-    command: "pip-chaser market-context validate-request --json"
-  - id: collect_context
-    command: "./bin/pip-chaser market-context collect --symbol EUR_USD --timeframe 15m --count 50"
+    command: "./bin/pip-chaser workflows market-scan --journal"
+  - id: review_summary
+    command: "./bin/pip-chaser workflows daily-summary"
     stdin: $validate_request.json
-  - id: validate_setups
-    command: "./bin/pip-chaser workflows validate-setup"
-    stdin: $collect_context.json
-  - id: explain_alerts
-    command: "./bin/pip-chaser workflows trade-explain"
-    stdin: $validate_setups.json
-  - id: summarize
-    command: "./bin/pip-chaser workflows summarize-scan"
-    stdin: $explain_alerts.json

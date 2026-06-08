@@ -140,4 +140,7 @@ Current implementation note:
 - OANDA practice candle collection now exists in `bin/pip-chaser market-context collect`
 - strategy classification exists in `bin/pip-chaser strategy classify-fractal`
 - setup validation exists in `bin/pip-chaser workflows validate-setup`
+- market scanning exists in `bin/pip-chaser workflows market-scan`
+- trade explanation exists in `bin/pip-chaser workflows trade-explain`
+- daily summaries exist in `bin/pip-chaser workflows daily-summary`
 - Telegram delivery commands are still pending

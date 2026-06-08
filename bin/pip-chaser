@@ -137,6 +137,39 @@ def build_journal_entry(event_type: str, payload: dict, status: str = "ok") -> d
     }
 
 
+def parse_csv_values(value: str | None, default: tuple[str, ...]) -> list[str]:
+    if not value:
+        return list(default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def detection_duplicate_key(result: dict) -> str | None:
+    if result.get("direction") not in ("bullish", "bearish"):
+        return None
+    center = result.get("center_candle_timestamp")
+    if not center:
+        return None
+    return "|".join(
+        [
+            str(result.get("symbol")),
+            str(result.get("timeframe")),
+            str(result.get("direction")),
+            str(center),
+        ]
+    )
+
+
+def previous_detection_keys(date_text: str | None, path_override: str | None) -> set[str]:
+    keys = set()
+    for entry in iter_journal_entries(date_text, path_override):
+        if entry.get("event_type") != "setup_decision":
+            continue
+        key = detection_duplicate_key(entry.get("payload") or {})
+        if key:
+            keys.add(key)
+    return keys
+
+
 def request_oanda_candles(symbol: str, timeframe: str, count: int) -> dict:
     query = urllib.parse.urlencode(
         {
@@ -465,6 +498,135 @@ def cmd_workflow_validate_setup(args: argparse.Namespace) -> int:
     return write_json(result)
 
 
+def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
+    symbols = [require_symbol(symbol) for symbol in parse_csv_values(args.symbols, SUPPORTED_SYMBOLS)]
+    timeframes = [require_timeframe(timeframe) for timeframe in parse_csv_values(args.timeframes, tuple(TIMEFRAME_TO_OANDA))]
+    if args.count < 5 or args.count > 5000:
+        raise CliError("count must be between 5 and 5000")
+    scan_run_id = args.workflow_run_id or str(uuid.uuid4())
+    existing_keys = previous_detection_keys(args.journal_date, args.journal_path) if args.journal else set()
+    seen_keys = set(existing_keys)
+    results = []
+    failures = []
+
+    for symbol in symbols:
+        for timeframe in timeframes:
+            workflow_run_id = f"{scan_run_id}:{symbol}:{timeframe}"
+            try:
+                payload = request_oanda_candles(symbol=symbol, timeframe=timeframe, count=args.count)
+                context = normalize_market_context(
+                    payload=payload,
+                    symbol=symbol,
+                    timeframe=timeframe,
+                    requested_by={
+                        "channel": args.channel,
+                        "user_id": args.user_id,
+                    },
+                    workflow_run_id=workflow_run_id,
+                )
+                result = build_detection_result(context)
+                validate_basic_schema(result, "detection-result.schema.json")
+                key = detection_duplicate_key(result)
+                result["duplicate_alert"] = bool(key and key in seen_keys)
+                if key:
+                    seen_keys.add(key)
+                results.append(result)
+
+                if args.journal:
+                    append_journal_entry(
+                        build_journal_entry(
+                            "workflow_run",
+                            {
+                                "workflow_run_id": workflow_run_id,
+                                "symbol": symbol,
+                                "timeframe": timeframe,
+                                "workflow": "market_scan",
+                            },
+                        ),
+                        args.journal_date,
+                        args.journal_path,
+                    )
+                    append_journal_entry(
+                        build_journal_entry("setup_decision", result),
+                        args.journal_date,
+                        args.journal_path,
+                    )
+            except CliError as exc:
+                failure = {
+                    "workflow_run_id": workflow_run_id,
+                    "symbol": symbol,
+                    "timeframe": timeframe,
+                    "error": str(exc),
+                }
+                failures.append(failure)
+                if args.journal:
+                    append_journal_entry(
+                        build_journal_entry("failure", failure, status="failed"),
+                        args.journal_date,
+                        args.journal_path,
+                    )
+
+    counts = {
+        "scanned": len(results),
+        "valid": sum(1 for result in results if result.get("classification") == "valid"),
+        "weak": sum(1 for result in results if result.get("classification") == "weak"),
+        "invalid": sum(1 for result in results if result.get("classification") == "invalid"),
+        "duplicate_alerts": sum(1 for result in results if result.get("duplicate_alert")),
+        "failures": len(failures),
+    }
+    alert_candidates = [
+        result
+        for result in results
+        if result.get("valid_detection") is True and result.get("duplicate_alert") is not True
+    ]
+    summary_lines = [
+        "Pip Chaser detection trial scan",
+        f"Run: {scan_run_id}",
+        f"Scanned: {counts['scanned']} setup(s)",
+        f"Valid: {counts['valid']} | Weak: {counts['weak']} | Invalid: {counts['invalid']}",
+        f"Duplicates: {counts['duplicate_alerts']} | Failures: {counts['failures']}",
+        "Detection only. No trades were placed.",
+    ]
+    if alert_candidates:
+        summary_lines.append(f"Alert candidates: {len(alert_candidates)}")
+    else:
+        summary_lines.append("Alert candidates: none")
+
+    return write_json(
+        {
+            "workflow_run_id": scan_run_id,
+            "scanned_at": utc_now(),
+            "symbols": symbols,
+            "timeframes": timeframes,
+            "counts": counts,
+            "results": results,
+            "failures": failures,
+            "alert_candidates": alert_candidates,
+            "telegram_summary_draft": "\n".join(summary_lines),
+        }
+    )
+
+
+def cmd_workflow_trade_explain(args: argparse.Namespace) -> int:
+    result = read_json_stdin()
+    validate_basic_schema(result, "detection-result.schema.json")
+    return write_json(
+        {
+            "workflow_run_id": result.get("workflow_run_id"),
+            "audience": args.audience,
+            "telegram_message": result.get("telegram_notification_draft"),
+            "safety_note": "Detection only. No trade has been placed.",
+        }
+    )
+
+
+def cmd_workflow_daily_summary(args: argparse.Namespace) -> int:
+    date_text = args.date or utc_now()[:10]
+    summary = summarize_entries(iter_journal_entries(date_text, args.journal_path), date_text)
+    summary["workflow"] = "daily_summary"
+    return write_json(summary)
+
+
 def cmd_journal_append(args: argparse.Namespace) -> int:
     payload = read_json_stdin()
     event_type = args.event_type
@@ -565,11 +727,32 @@ def build_parser() -> argparse.ArgumentParser:
 
     workflows = subparsers.add_parser("workflows")
     workflows_sub = workflows.add_subparsers(dest="workflows_command", required=True)
+    market_scan = workflows_sub.add_parser("market-scan")
+    market_scan.add_argument("--symbols")
+    market_scan.add_argument("--timeframes")
+    market_scan.add_argument("--count", type=int, default=50)
+    market_scan.add_argument("--workflow-run-id")
+    market_scan.add_argument("--channel", default="manual_test", choices=("telegram", "scheduled", "manual_test"))
+    market_scan.add_argument("--user-id", default="unknown")
+    market_scan.add_argument("--journal", action="store_true")
+    market_scan.add_argument("--journal-date")
+    market_scan.add_argument("--journal-path")
+    market_scan.set_defaults(func=cmd_workflow_market_scan)
+
     validate_setup = workflows_sub.add_parser("validate-setup")
     validate_setup.add_argument("--journal", action="store_true")
     validate_setup.add_argument("--journal-date")
     validate_setup.add_argument("--journal-path")
     validate_setup.set_defaults(func=cmd_workflow_validate_setup)
+
+    trade_explain = workflows_sub.add_parser("trade-explain")
+    trade_explain.add_argument("--audience", default="telegram_group", choices=("telegram_group", "telegram_dm", "journal"))
+    trade_explain.set_defaults(func=cmd_workflow_trade_explain)
+
+    daily_summary = workflows_sub.add_parser("daily-summary")
+    daily_summary.add_argument("--date")
+    daily_summary.add_argument("--journal-path")
+    daily_summary.set_defaults(func=cmd_workflow_daily_summary)
 
     journal = subparsers.add_parser("journal")
     journal_sub = journal.add_subparsers(dest="journal_command", required=True)

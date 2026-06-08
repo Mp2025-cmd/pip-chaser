@@ -183,7 +183,7 @@ Telegram UX source of truth:
 - [x] Add read-only OANDA practice candle adapter
 - [x] Smoke test OANDA candle adapter with demo credentials
 - [x] Make `validate_setup` runnable against real JSON commands
-- [ ] Make full `market_scan`, `trade_explain`, and `daily_summary` runnable against real JSON commands
+- [x] Make full `market_scan`, `trade_explain`, and `daily_summary` runnable against real JSON commands
 
 Source files:
 - `docs/market-context-inputs.md`
@@ -209,3 +209,23 @@ Smoke test note:
 
 Source of truth:
 - `docs/journaling.md`
+
+## 12. Detection trial
+
+- [x] Add repeatable market scan command
+- [x] Add journal-backed duplicate-alert review
+- [x] Add daily trial summary command
+- [x] Document how to review the trial
+- [ ] Run continuous detection mode on the hosted runtime
+- [ ] Review alert quality with the team
+- [ ] Track missed detections and false positives
+- [ ] Tune the skill or workflow from evidence
+
+Source of truth:
+- `docs/detection-trial.md`
+
+Manual trial command:
+
+```bash
+./bin/pip-chaser workflows market-scan --journal
+```
