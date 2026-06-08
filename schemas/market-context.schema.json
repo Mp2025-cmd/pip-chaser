@@ -107,6 +107,24 @@
         "near_resistance": {
           "type": ["boolean", "null"]
         },
+        "nearest_support": {
+          "type": ["number", "null"]
+        },
+        "nearest_resistance": {
+          "type": ["number", "null"]
+        },
+        "distance_to_support": {
+          "type": ["number", "null"]
+        },
+        "distance_to_resistance": {
+          "type": ["number", "null"]
+        },
+        "tolerance": {
+          "type": ["number", "null"]
+        },
+        "method": {
+          "type": "string"
+        },
         "notes": {
           "type": "string"
         }

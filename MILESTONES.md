@@ -223,6 +223,7 @@ Goal: run the full system continuously and learn from real behavior.
 - [x] Document the detection-trial review process
 - [x] Add manual Telegram delivery for valid non-duplicate signals
 - [x] Add Telegram delivery dry-run mode
+- [x] Add automatic support/resistance context from OANDA candles
 - [ ] Run the bot continuously in detection mode
 - [ ] Review alert quality
 - [ ] Review missed detections
@@ -240,6 +241,7 @@ Current note:
 - `./bin/pip-chaser workflows market-scan --journal` can scan live OANDA demo candles and journal the results
 - `./bin/pip-chaser workflows market-scan --journal --send-telegram` can send valid non-duplicate signals to Telegram
 - `./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run` previews delivery without posting
+- OANDA candle collection now computes first-pass support/resistance context from closed swing pivots
 - `./bin/pip-chaser workflows daily-summary` creates a review summary from the journal
 - Milestone 9 is now ready for live observation, but it is not complete until the team reviews real scan history
 

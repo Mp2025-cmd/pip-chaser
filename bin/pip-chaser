@@ -267,6 +267,100 @@ def request_oanda_candles(symbol: str, timeframe: str, count: int) -> dict:
         raise CliError(f"OANDA candle request failed: {exc.reason}") from exc
 
 
+def price_decimals(symbol: str) -> int:
+    return 3 if "JPY" in symbol else 5
+
+
+def round_price(symbol: str, price: float) -> float:
+    return round(price, price_decimals(symbol))
+
+
+def average_range(candles: list[dict]) -> float:
+    ranges = [candle_value(candle, "high") - candle_value(candle, "low") for candle in candles]
+    return sum(ranges) / len(ranges) if ranges else 0.0
+
+
+def find_recent_fractal_candidate(candles: list[dict]) -> tuple[str, list[dict]] | None:
+    candidate = None
+    for start in range(0, len(candles) - 4):
+        window = candles[start : start + 5]
+        if is_bullish_fractal(window):
+            candidate = ("bullish", window)
+        elif is_bearish_fractal(window):
+            candidate = ("bearish", window)
+    return candidate
+
+
+def pivot_levels(candles: list[dict], key: str) -> list[float]:
+    levels = []
+    for index in range(1, len(candles) - 1):
+        current = candle_value(candles[index], key)
+        previous_value = candle_value(candles[index - 1], key)
+        next_value = candle_value(candles[index + 1], key)
+        if key == "low" and current < previous_value and current < next_value:
+            levels.append(current)
+        if key == "high" and current > previous_value and current > next_value:
+            levels.append(current)
+    return levels
+
+
+def nearest_level(price: float, levels: list[float]) -> float | None:
+    if not levels:
+        return None
+    return min(levels, key=lambda level: abs(price - level))
+
+
+def build_support_resistance_context(candles: list[dict], symbol: str) -> dict:
+    complete_candles = [candle for candle in candles if candle.get("complete") is True]
+    candidate = find_recent_fractal_candidate(complete_candles)
+    if len(complete_candles) < 21 or not candidate:
+        return {
+            "near_support": None,
+            "near_resistance": None,
+            "nearest_support": None,
+            "nearest_resistance": None,
+            "distance_to_support": None,
+            "distance_to_resistance": None,
+            "tolerance": None,
+            "method": "recent_swing_pivots",
+            "notes": "Not enough closed candles or no recent fractal candidate for automatic support/resistance context.",
+        }
+
+    direction, window = candidate
+    center = window[2]
+    candidate_price = candle_value(center, "low" if direction == "bullish" else "high")
+    recent = complete_candles[-50:]
+    support_levels = pivot_levels(recent, "low")
+    resistance_levels = pivot_levels(recent, "high")
+    nearest_support = nearest_level(candidate_price, support_levels)
+    nearest_resistance = nearest_level(candidate_price, resistance_levels)
+    avg_range = average_range(recent[-20:])
+    tolerance = avg_range * 0.5 if avg_range else 0.0
+    distance_to_support = abs(candidate_price - nearest_support) if nearest_support is not None else None
+    distance_to_resistance = abs(candidate_price - nearest_resistance) if nearest_resistance is not None else None
+    near_support = distance_to_support is not None and distance_to_support <= tolerance
+    near_resistance = distance_to_resistance is not None and distance_to_resistance <= tolerance
+    relevant_near = near_support if direction == "bullish" else near_resistance
+    relevant_label = "support" if direction == "bullish" else "resistance"
+
+    if relevant_near:
+        notes = f"Recent {direction} fractal is near computed {relevant_label} using swing pivots from closed candles."
+    else:
+        notes = f"Recent {direction} fractal is not close enough to computed {relevant_label} using swing pivots from closed candles."
+
+    return {
+        "near_support": near_support,
+        "near_resistance": near_resistance,
+        "nearest_support": round_price(symbol, nearest_support) if nearest_support is not None else None,
+        "nearest_resistance": round_price(symbol, nearest_resistance) if nearest_resistance is not None else None,
+        "distance_to_support": round_price(symbol, distance_to_support) if distance_to_support is not None else None,
+        "distance_to_resistance": round_price(symbol, distance_to_resistance) if distance_to_resistance is not None else None,
+        "tolerance": round_price(symbol, tolerance),
+        "method": "recent_swing_pivots",
+        "notes": notes,
+    }
+
+
 def normalize_market_context(
     payload: dict,
     symbol: str,
@@ -300,11 +394,7 @@ def normalize_market_context(
         },
         "requested_by": requested_by,
         "candles": candles,
-        "support_resistance_context": {
-            "near_support": None,
-            "near_resistance": None,
-            "notes": "Not computed by the OANDA candle adapter yet.",
-        },
+        "support_resistance_context": build_support_resistance_context(candles, symbol),
         "trend_context": {
             "direction": "unknown",
             "moving_average_confirmation": "missing",
@@ -423,7 +513,7 @@ def is_bearish_fractal(window: list[dict]) -> bool:
     return all(center_high > candle_value(candle, "high") for index, candle in enumerate(window) if index != 2)
 
 
-def context_confirmation_state(context: dict) -> tuple[str, list[str], list[str]]:
+def context_confirmation_state(context: dict, direction: str) -> tuple[str, list[str], list[str]]:
     missing = []
     conflicts = []
 
@@ -431,8 +521,13 @@ def context_confirmation_state(context: dict) -> tuple[str, list[str], list[str]
     trend = context.get("trend_context") or {}
     indicators = context.get("indicator_context") or {}
 
-    if support.get("near_support") is None and support.get("near_resistance") is None:
+    relevant_key = "near_support" if direction == "bullish" else "near_resistance"
+    relevant_label = "support" if direction == "bullish" else "resistance"
+    relevant_context = support.get(relevant_key)
+    if relevant_context is None:
         missing.append("support/resistance context")
+    elif relevant_context is False:
+        conflicts.append(f"fractal is not near computed {relevant_label}")
 
     ma = trend.get("moving_average_confirmation", "missing")
     if ma in ("missing", "unknown"):
@@ -463,6 +558,7 @@ def build_detection_result(context: dict) -> dict:
         "symbol": context.get("symbol"),
         "timeframe": context.get("timeframe", "unknown"),
         "center_candle_timestamp": None,
+        "support_resistance_context": context.get("support_resistance_context"),
     }
 
     if len(complete_candles) < 5:
@@ -499,7 +595,7 @@ def build_detection_result(context: dict) -> dict:
 
     direction, window = candidate
     center = window[2]
-    confirmation_state, missing, conflicts = context_confirmation_state(context)
+    confirmation_state, missing, conflicts = context_confirmation_state(context, direction)
     classification = "valid" if confirmation_state == "aligned" else "weak"
     valid_detection = classification == "valid"
     if conflicts:

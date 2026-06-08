@@ -40,6 +40,9 @@
       "type": ["string", "null"],
       "format": "date-time"
     },
+    "support_resistance_context": {
+      "type": ["object", "null"]
+    },
     "reasoning_summary": {
       "type": "string"
     },

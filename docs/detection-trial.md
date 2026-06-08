@@ -64,6 +64,7 @@ For each pair/timeframe it:
 
 - pulls OANDA demo candles
 - normalizes the data
+- computes first-pass support/resistance from recent swing pivots
 - detects the most recent complete 5-candle fractal
 - marks the setup as `valid`, `weak`, or `invalid`
 - flags duplicate alerts using symbol, timeframe, direction, and center candle timestamp

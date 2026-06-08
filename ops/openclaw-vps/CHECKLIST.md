@@ -218,6 +218,7 @@ Source of truth:
 - [x] Document how to review the trial
 - [x] Add manual Telegram signal delivery for valid non-duplicate detections
 - [x] Add Telegram delivery dry-run mode
+- [x] Add automatic support/resistance context from OANDA candles
 - [ ] Run continuous detection mode on the hosted runtime
 - [ ] Review alert quality with the team
 - [ ] Track missed detections and false positives

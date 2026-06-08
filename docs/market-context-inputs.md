@@ -62,17 +62,32 @@ The bot should only validate fractals on closed candles.
 
 The strategy currently asks for confirmation using:
 
+- support/resistance context around the fractal
 - Moving Averages for trend filtering
 - RSI for momentum confirmation
 - MACD for momentum confirmation
 
 These values may come from:
 
+- automatic swing-pivot calculation from OANDA candles
 - precomputed market-data tooling
 - TradingView screenshots/manual context
 - later OANDA/indicator adapter code
 
 If confirmation values are missing, the setup can still be described, but confidence should be downgraded to weak or incomplete.
+
+## Automatic Support/Resistance
+
+The OANDA adapter computes a first-pass support/resistance context from closed candles.
+
+Current method:
+- find recent swing lows as support candidates
+- find recent swing highs as resistance candidates
+- compare the latest fractal center price against the nearest relevant level
+- treat bullish fractals as stronger near support
+- treat bearish fractals as stronger near resistance
+
+This is intentionally simple. It is good enough for v1 signal filtering, but the team should still review charts during the detection trial.
 
 ## Chart Images
 
@@ -115,6 +130,7 @@ Current adapter:
 - reads from OANDA practice/demo only
 - requires `OANDA_PAPER_API_KEY`
 - returns normalized market-context JSON
+- computes first-pass support/resistance context from closed candles
 - does not place trades
 
 The adapter should return normalized candle JSON and should not make trading decisions.
