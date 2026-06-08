@@ -27,10 +27,16 @@ Timeframe mapping:
 
 ## Environment Variables
 
-Set this on the VPS or local shell:
+For local testing, copy `.env.example` to `.env.local` and set the demo token there.
 
 ```bash
-export OANDA_PAPER_API_KEY="your-demo-token"
+cp .env.example .env.local
+```
+
+Then edit `.env.local`:
+
+```bash
+OANDA_PAPER_API_KEY=your-demo-token
 ```
 
 Optional override:
@@ -56,6 +62,25 @@ Expected result:
 - `timeframe` is `15m`
 - `source.name` is `oanda_candles`
 - candles include `timestamp`, `open`, `high`, `low`, `close`, `volume`, and `complete`
+
+## Fractal Detection Smoke Test
+
+```bash
+set -a
+source .env.local
+set +a
+
+./bin/pip-chaser market-context collect --symbol EUR_USD --timeframe 15m --count 50 \
+  | ./bin/pip-chaser workflows validate-setup
+```
+
+Expected result:
+
+- JSON output
+- `classification` is `valid`, `weak`, or `invalid`
+- `direction` is `bullish`, `bearish`, or `none`
+- weak results list missing confirmation context
+- every response says detection only and does not imply a trade
 
 ## Safety Notes
 

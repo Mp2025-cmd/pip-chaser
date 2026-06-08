@@ -11,6 +11,7 @@ import argparse
 import datetime as dt
 import json
 import os
+from pathlib import Path
 import sys
 import urllib.error
 import urllib.parse
@@ -68,6 +69,19 @@ def env_token() -> str:
 
 def oanda_base_url() -> str:
     return os.environ.get("OANDA_PAPER_API_BASE", DEFAULT_OANDA_PRACTICE_URL).rstrip("/")
+
+
+def read_json_stdin() -> dict:
+    try:
+        return json.load(sys.stdin)
+    except json.JSONDecodeError as exc:
+        raise CliError(f"Invalid JSON on stdin: {exc}") from exc
+
+
+def write_json(payload: dict) -> int:
+    json.dump(payload, sys.stdout, indent=2)
+    sys.stdout.write("\n")
+    return 0
 
 
 def request_oanda_candles(symbol: str, timeframe: str, count: int) -> dict:
@@ -172,9 +186,213 @@ def cmd_collect(args: argparse.Namespace) -> int:
         requested_by=requested_by,
         workflow_run_id=args.workflow_run_id or str(uuid.uuid4()),
     )
-    json.dump(context, sys.stdout, indent=2)
-    sys.stdout.write("\n")
-    return 0
+    return write_json(context)
+
+
+def required_fields_for_schema(schema_path: str) -> tuple[str, ...]:
+    schema_name = Path(schema_path).name
+    if schema_name == "market-context.schema.json":
+        return ("workflow_run_id", "symbol", "timeframe", "candles", "source", "requested_by")
+    if schema_name == "detection-result.schema.json":
+        return (
+            "workflow_run_id",
+            "valid_detection",
+            "direction",
+            "timeframe",
+            "reasoning_summary",
+            "confirmation_notes",
+            "telegram_notification_draft",
+            "missing_information",
+        )
+    raise CliError(f"Unsupported schema: {schema_path}")
+
+
+def validate_basic_schema(payload: dict, schema_path: str) -> None:
+    if not isinstance(payload, dict):
+        raise CliError("Expected a JSON object")
+
+    missing = [field for field in required_fields_for_schema(schema_path) if field not in payload]
+    if missing:
+        raise CliError(f"Schema validation failed; missing required fields: {', '.join(missing)}")
+
+    if Path(schema_path).name == "market-context.schema.json":
+        require_symbol(str(payload["symbol"]))
+        require_timeframe(str(payload["timeframe"]))
+        candles = payload.get("candles")
+        if not isinstance(candles, list) or len(candles) < 5:
+            raise CliError("Schema validation failed; candles must contain at least 5 items")
+        for index, candle in enumerate(candles):
+            for field in ("timestamp", "open", "high", "low", "close", "complete"):
+                if field not in candle:
+                    raise CliError(f"Schema validation failed; candle {index} missing {field}")
+
+    if Path(schema_path).name == "detection-result.schema.json":
+        if payload["direction"] not in ("bullish", "bearish", "none"):
+            raise CliError("Schema validation failed; direction must be bullish, bearish, or none")
+        if payload["timeframe"] not in ("15m", "1h", "4h", "Daily", "unknown"):
+            raise CliError("Schema validation failed; unsupported timeframe")
+
+
+def validate_market_context_core(payload: dict) -> None:
+    if not isinstance(payload, dict):
+        raise CliError("Expected a JSON object")
+    for field in ("workflow_run_id", "symbol", "timeframe", "candles", "source", "requested_by"):
+        if field not in payload:
+            raise CliError(f"Market context missing required field: {field}")
+    require_symbol(str(payload["symbol"]))
+    require_timeframe(str(payload["timeframe"]))
+    if not isinstance(payload["candles"], list):
+        raise CliError("Market context candles must be a list")
+
+
+def cmd_schema_validate(args: argparse.Namespace) -> int:
+    payload = read_json_stdin()
+    validate_basic_schema(payload, args.schema)
+    return write_json(payload)
+
+
+def candle_value(candle: dict, key: str) -> float:
+    try:
+        return float(candle[key])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise CliError(f"Invalid candle {key} value") from exc
+
+
+def is_bullish_fractal(window: list[dict]) -> bool:
+    center_low = candle_value(window[2], "low")
+    return all(center_low < candle_value(candle, "low") for index, candle in enumerate(window) if index != 2)
+
+
+def is_bearish_fractal(window: list[dict]) -> bool:
+    center_high = candle_value(window[2], "high")
+    return all(center_high > candle_value(candle, "high") for index, candle in enumerate(window) if index != 2)
+
+
+def context_confirmation_state(context: dict) -> tuple[str, list[str], list[str]]:
+    missing = []
+    conflicts = []
+
+    support = context.get("support_resistance_context") or {}
+    trend = context.get("trend_context") or {}
+    indicators = context.get("indicator_context") or {}
+
+    if support.get("near_support") is None and support.get("near_resistance") is None:
+        missing.append("support/resistance context")
+
+    ma = trend.get("moving_average_confirmation", "missing")
+    if ma in ("missing", "unknown"):
+        missing.append("Moving Average confirmation")
+    elif ma == "conflicting":
+        conflicts.append("Moving Average confirmation conflicts")
+
+    for label, key in (("RSI", "rsi_confirmation"), ("MACD", "macd_confirmation")):
+        value = indicators.get(key, "missing")
+        if value in ("missing", "unknown"):
+            missing.append(f"{label} confirmation")
+        elif value == "conflicting":
+            conflicts.append(f"{label} confirmation conflicts")
+
+    if conflicts:
+        return "conflicting", missing, conflicts
+    if missing:
+        return "missing", missing, conflicts
+    return "aligned", missing, conflicts
+
+
+def build_detection_result(context: dict) -> dict:
+    validate_market_context_core(context)
+
+    complete_candles = [candle for candle in context["candles"] if candle.get("complete") is True]
+    base = {
+        "workflow_run_id": context["workflow_run_id"],
+        "symbol": context.get("symbol"),
+        "timeframe": context.get("timeframe", "unknown"),
+        "center_candle_timestamp": None,
+    }
+
+    if len(complete_candles) < 5:
+        return {
+            **base,
+            "valid_detection": False,
+            "classification": "invalid",
+            "direction": "none",
+            "reasoning_summary": "Invalid setup: fewer than 5 closed candles are available.",
+            "confirmation_notes": "A fractal requires five consecutive closed candles.",
+            "telegram_notification_draft": "No fractal alert: fewer than 5 closed candles are available. Detection only; no trade has been placed.",
+            "missing_information": ["at least 5 closed candles"],
+        }
+
+    candidate = None
+    for start in range(0, len(complete_candles) - 4):
+        window = complete_candles[start : start + 5]
+        if is_bullish_fractal(window):
+            candidate = ("bullish", window)
+        elif is_bearish_fractal(window):
+            candidate = ("bearish", window)
+
+    if not candidate:
+        return {
+            **base,
+            "valid_detection": False,
+            "classification": "invalid",
+            "direction": "none",
+            "reasoning_summary": "Invalid setup: no complete 5-candle bullish or bearish fractal was found.",
+            "confirmation_notes": "The middle candle was not the strict high or low extreme in any complete 5-candle window.",
+            "telegram_notification_draft": "No fractal alert: no valid 5-candle fractal was found. Detection only; no trade has been placed.",
+            "missing_information": [],
+        }
+
+    direction, window = candidate
+    center = window[2]
+    confirmation_state, missing, conflicts = context_confirmation_state(context)
+    classification = "valid" if confirmation_state == "aligned" else "weak"
+    valid_detection = classification == "valid"
+    if conflicts:
+        confirmation_notes = "Conflicting confirmation: " + "; ".join(conflicts)
+    elif missing:
+        confirmation_notes = "Missing confirmation: " + "; ".join(missing)
+    else:
+        confirmation_notes = "Support/resistance, Moving Average, RSI, and MACD context are present and aligned."
+
+    reason = (
+        f"{classification.title()} {direction} fractal on {context['symbol']} {context['timeframe']}: "
+        f"the center candle is the {'lowest low' if direction == 'bullish' else 'highest high'} "
+        "within a complete 5-candle window."
+    )
+    alert = (
+        f"Fractal detection\n\n"
+        f"Symbol: {context['symbol']}\n"
+        f"Timeframe: {context['timeframe']}\n"
+        f"Direction: {direction}\n"
+        f"Confidence: {classification}\n\n"
+        f"Why: {reason}\n"
+        f"Confirmation: {confirmation_notes}\n\n"
+        "Note: detection only. No trade has been placed."
+    )
+
+    return {
+        **base,
+        "valid_detection": valid_detection,
+        "classification": classification,
+        "direction": direction,
+        "center_candle_timestamp": center.get("timestamp"),
+        "reasoning_summary": reason,
+        "confirmation_notes": confirmation_notes,
+        "telegram_notification_draft": alert,
+        "missing_information": missing,
+    }
+
+
+def cmd_classify_fractal(args: argparse.Namespace) -> int:
+    context = read_json_stdin()
+    return write_json(build_detection_result(context))
+
+
+def cmd_workflow_validate_setup(args: argparse.Namespace) -> int:
+    context = read_json_stdin()
+    result = build_detection_result(context)
+    validate_basic_schema(result, "detection-result.schema.json")
+    return write_json(result)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -194,6 +412,22 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--chat-id")
     collect.add_argument("--message-id")
     collect.set_defaults(func=cmd_collect)
+
+    schemas = subparsers.add_parser("schemas")
+    schemas_sub = schemas.add_subparsers(dest="schemas_command", required=True)
+    validate = schemas_sub.add_parser("validate")
+    validate.add_argument("--schema", required=True)
+    validate.set_defaults(func=cmd_schema_validate)
+
+    strategy = subparsers.add_parser("strategy")
+    strategy_sub = strategy.add_subparsers(dest="strategy_command", required=True)
+    classify = strategy_sub.add_parser("classify-fractal")
+    classify.set_defaults(func=cmd_classify_fractal)
+
+    workflows = subparsers.add_parser("workflows")
+    workflows_sub = workflows.add_subparsers(dest="workflows_command", required=True)
+    validate_setup = workflows_sub.add_parser("validate-setup")
+    validate_setup.set_defaults(func=cmd_workflow_validate_setup)
 
     return parser
 

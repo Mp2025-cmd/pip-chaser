@@ -1,0 +1,35 @@
+{
+  "workflow_run_id": "fixture-bullish-weak-missing-confirmation",
+  "symbol": "EUR_USD",
+  "timeframe": "Daily",
+  "source": {
+    "name": "manual_sample",
+    "mode": "manual"
+  },
+  "requested_by": {
+    "channel": "manual_test",
+    "user_id": "fixture"
+  },
+  "candles": [
+    {"timestamp": "2026-06-01T21:00:00Z", "open": 1.1000, "high": 1.1010, "low": 1.0990, "close": 1.1005, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-02T21:00:00Z", "open": 1.1005, "high": 1.1012, "low": 1.0985, "close": 1.0995, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-03T21:00:00Z", "open": 1.0995, "high": 1.1000, "low": 1.0970, "close": 1.0990, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-04T21:00:00Z", "open": 1.0990, "high": 1.1010, "low": 1.0982, "close": 1.1000, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-05T21:00:00Z", "open": 1.1000, "high": 1.1020, "low": 1.0988, "close": 1.1010, "volume": 100, "complete": true}
+  ],
+  "support_resistance_context": {
+    "near_support": null,
+    "near_resistance": null,
+    "notes": "Support/resistance not supplied."
+  },
+  "trend_context": {
+    "direction": "unknown",
+    "moving_average_confirmation": "missing",
+    "notes": "Moving Average confirmation not supplied."
+  },
+  "indicator_context": {
+    "rsi_confirmation": "missing",
+    "macd_confirmation": "missing",
+    "notes": "RSI and MACD confirmation not supplied."
+  }
+}

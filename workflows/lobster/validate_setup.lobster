@@ -4,13 +4,10 @@ args:
     default: null
 steps:
   - id: validate_schema
-    command: "pip-chaser schemas validate --schema schemas/market-context.schema.json --json"
+    command: "./bin/pip-chaser schemas validate --schema schemas/market-context.schema.json"
   - id: classify_fractal
-    command: "pip-chaser strategy classify-fractal --json"
+    command: "./bin/pip-chaser strategy classify-fractal"
     stdin: $validate_schema.json
-  - id: apply_confirmations
-    command: "pip-chaser strategy apply-confirmations --json"
-    stdin: $classify_fractal.json
   - id: validate_result_schema
-    command: "pip-chaser schemas validate --schema schemas/detection-result.schema.json --json"
-    stdin: $apply_confirmations.json
+    command: "./bin/pip-chaser schemas validate --schema schemas/detection-result.schema.json"
+    stdin: $classify_fractal.json

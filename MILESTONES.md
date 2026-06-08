@@ -80,7 +80,7 @@ Goal: encode the current PDF into a reusable OpenClaw skill focused on detection
 - [x] Encode indicator confirmation guidance
 - [x] Encode how the bot should explain a detection in plain English
 - [x] Encode a Telegram notification draft format
-- [ ] Test the skill on sample detections and non-detections
+- [x] Test the skill on sample detections and non-detections
 
 Definition of done:
 - The skill can consistently explain why a fractal detection passes, fails, or is weak
@@ -89,7 +89,8 @@ Definition of done:
 
 Current note:
 - The workspace skill and reference files now exist in `skills/pip-chaser-fractal-detection`
-- Remaining work for Milestone 2 is scenario-based validation against sample detections and non-detections
+- Scenario fixtures now cover bullish valid, bearish valid, invalid 4-candle, invalid non-extreme, and weak missing-confirmation cases
+- Live OANDA demo candles can be piped into `./bin/pip-chaser workflows validate-setup`
 
 ## Milestone 3: Market Context Inputs
 Goal: define and fetch the minimum data the workflows need.
@@ -120,7 +121,7 @@ Current note:
 Goal: define deterministic detection workflows before allowing execution.
 
 - [x] Scaffold `market_scan`
-- [x] Scaffold `validate_setup`
+- [x] Implement runnable `validate_setup`
 - [x] Scaffold `trade_explain`
 - [x] Scaffold `daily_summary`
 - [-] Defer `paper_trade_execute` until a later execution doctrine exists
@@ -136,7 +137,8 @@ Current note:
 - Workflow contracts are documented in `docs/lobster-workflows.md`
 - Lobster scaffolds live in `workflows/lobster`
 - `market_scan` now points at the local `bin/pip-chaser` OANDA candle adapter
-- Runtime execution remains pending for strategy classification, Telegram drafting, and journal commands
+- `validate_setup` now runs real fractal classification from market-context JSON
+- Runtime execution remains pending for full market scanning, Telegram drafting, and journal commands
 
 ## Milestone 5: Risk and Safety Layer
 Goal: prepare safety rules before broker execution exists.

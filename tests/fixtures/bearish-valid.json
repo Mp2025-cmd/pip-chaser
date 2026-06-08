@@ -1,0 +1,35 @@
+{
+  "workflow_run_id": "fixture-bearish-valid",
+  "symbol": "GBP_USD",
+  "timeframe": "1h",
+  "source": {
+    "name": "manual_sample",
+    "mode": "manual"
+  },
+  "requested_by": {
+    "channel": "manual_test",
+    "user_id": "fixture"
+  },
+  "candles": [
+    {"timestamp": "2026-06-08T00:00:00Z", "open": 1.2700, "high": 1.2720, "low": 1.2690, "close": 1.2710, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-08T01:00:00Z", "open": 1.2710, "high": 1.2730, "low": 1.2700, "close": 1.2720, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-08T02:00:00Z", "open": 1.2720, "high": 1.2760, "low": 1.2710, "close": 1.2725, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-08T03:00:00Z", "open": 1.2725, "high": 1.2740, "low": 1.2700, "close": 1.2715, "volume": 100, "complete": true},
+    {"timestamp": "2026-06-08T04:00:00Z", "open": 1.2715, "high": 1.2735, "low": 1.2695, "close": 1.2705, "volume": 100, "complete": true}
+  ],
+  "support_resistance_context": {
+    "near_support": false,
+    "near_resistance": true,
+    "notes": "Fixture assumes nearby resistance."
+  },
+  "trend_context": {
+    "direction": "down",
+    "moving_average_confirmation": "aligned",
+    "notes": "Fixture assumes MA alignment."
+  },
+  "indicator_context": {
+    "rsi_confirmation": "aligned",
+    "macd_confirmation": "aligned",
+    "notes": "Fixture assumes RSI and MACD alignment."
+  }
+}

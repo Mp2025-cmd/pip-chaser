@@ -182,7 +182,8 @@ Telegram UX source of truth:
 - [x] Add Lobster workflow scaffolds
 - [x] Add read-only OANDA practice candle adapter
 - [x] Smoke test OANDA candle adapter with demo credentials
-- [ ] Make the Lobster scaffolds runnable against real JSON commands
+- [x] Make `validate_setup` runnable against real JSON commands
+- [ ] Make full `market_scan`, `trade_explain`, and `daily_summary` runnable against real JSON commands
 
 Source files:
 - `docs/market-context-inputs.md`
@@ -196,3 +197,4 @@ Source files:
 Smoke test note:
 - OANDA practice candles were verified for `USD_JPY` 15m and `EUR_USD` 1h.
 - The demo API token was used only as a temporary environment variable and was not committed.
+- Live `EUR_USD` 15m candles were piped into `./bin/pip-chaser workflows validate-setup` and produced a structured detection result.

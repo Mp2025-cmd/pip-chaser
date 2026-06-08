@@ -138,5 +138,6 @@ These files are contracts for implementation. They should be wired to real JSON-
 
 Current implementation note:
 - OANDA practice candle collection now exists in `bin/pip-chaser market-context collect`
-- strategy classification commands are still pending
+- strategy classification exists in `bin/pip-chaser strategy classify-fractal`
+- setup validation exists in `bin/pip-chaser workflows validate-setup`
 - Telegram delivery commands are still pending

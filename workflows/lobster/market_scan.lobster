@@ -15,11 +15,11 @@ steps:
     command: "./bin/pip-chaser market-context collect --symbol EUR_USD --timeframe 15m --count 50"
     stdin: $validate_request.json
   - id: validate_setups
-    command: "pip-chaser workflows validate-setup --json"
+    command: "./bin/pip-chaser workflows validate-setup"
     stdin: $collect_context.json
   - id: explain_alerts
-    command: "pip-chaser workflows trade-explain --json"
+    command: "./bin/pip-chaser workflows trade-explain"
     stdin: $validate_setups.json
   - id: summarize
-    command: "pip-chaser workflows summarize-scan --json"
+    command: "./bin/pip-chaser workflows summarize-scan"
     stdin: $explain_alerts.json
