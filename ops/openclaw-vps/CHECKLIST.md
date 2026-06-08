@@ -181,7 +181,7 @@ Telegram UX source of truth:
 - [x] Document Lobster workflow contracts
 - [x] Add Lobster workflow scaffolds
 - [x] Add read-only OANDA practice candle adapter
-- [ ] Smoke test OANDA candle adapter with demo credentials
+- [x] Smoke test OANDA candle adapter with demo credentials
 - [ ] Make the Lobster scaffolds runnable against real JSON commands
 
 Source files:
@@ -192,3 +192,7 @@ Source files:
 - `schemas/detection-result.schema.json`
 - `bin/pip-chaser`
 - `workflows/lobster/`
+
+Smoke test note:
+- OANDA practice candles were verified for `USD_JPY` 15m and `EUR_USD` 1h.
+- The demo API token was used only as a temporary environment variable and was not committed.

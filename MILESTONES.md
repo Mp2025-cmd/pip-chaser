@@ -98,7 +98,7 @@ Goal: define and fetch the minimum data the workflows need.
 - [x] Decide the minimum timeframes to support first
 - [x] Define the structured setup-validation input format
 - [x] Add OANDA practice candle-data adapter
-- [ ] Smoke test OANDA candle pulling with demo credentials
+- [x] Smoke test OANDA candle pulling with demo credentials
 - [x] Normalize candle data into the workflow input format
 - [x] Decide whether to include chart images in v1
 - [x] Evaluate reusable MCP/context tools for market context
@@ -113,7 +113,8 @@ Current note:
 - JSON schemas live in `schemas/market-context.schema.json` and `schemas/detection-result.schema.json`
 - V1 symbols are `EUR_USD`, `GBP_USD`, and `USD_JPY`
 - Read-only OANDA practice candle collection exists in `bin/pip-chaser market-context collect`
-- Live candle smoke testing remains pending until `OANDA_PAPER_API_KEY` is available in the runtime
+- OANDA practice candle smoke testing is verified for `USD_JPY` 15m and `EUR_USD` 1h
+- The demo token was used only as a temporary environment variable and was not committed
 
 ## Milestone 4: Lobster Workflow Design
 Goal: define deterministic detection workflows before allowing execution.
