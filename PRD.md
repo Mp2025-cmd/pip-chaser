@@ -286,6 +286,15 @@ The Telegram UX contract lives in [docs/telegram-ux.md](docs/telegram-ux.md).
 Deferred for now.
 When activated later, it will own broker actions only.
 
+### Journal Layer
+The journal owns:
+- workflow-run records
+- setup-decision records
+- failure records
+- daily review summaries
+
+The journal contract lives in [docs/journaling.md](docs/journaling.md).
+
 ## Edge Cases to Address
 ### Strategy and data issues
 - only 4 candles are available, so the fractal is incomplete

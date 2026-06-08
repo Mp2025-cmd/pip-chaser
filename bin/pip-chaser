@@ -27,6 +27,7 @@ TIMEFRAME_TO_OANDA = {
     "Daily": "D",
 }
 DEFAULT_OANDA_PRACTICE_URL = "https://api-fxpractice.oanda.com"
+DEFAULT_JOURNAL_DIR = "journal"
 
 
 class CliError(Exception):
@@ -82,6 +83,58 @@ def write_json(payload: dict) -> int:
     json.dump(payload, sys.stdout, indent=2)
     sys.stdout.write("\n")
     return 0
+
+
+def journal_dir() -> Path:
+    return Path(os.environ.get("PIP_CHASER_JOURNAL_DIR", DEFAULT_JOURNAL_DIR))
+
+
+def journal_path(date_text: str | None = None, path_override: str | None = None) -> Path:
+    if path_override:
+        return Path(path_override)
+    date_text = date_text or utc_now()[:10]
+    return journal_dir() / f"{date_text}.jsonl"
+
+
+def append_journal_entry(entry: dict, date_text: str | None = None, path_override: str | None = None) -> Path:
+    path = journal_path(date_text, path_override)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, sort_keys=True) + "\n")
+    return path
+
+
+def iter_journal_entries(date_text: str | None = None, path_override: str | None = None) -> list[dict]:
+    path = journal_path(date_text, path_override)
+    if not path.exists():
+        return []
+
+    entries = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                entries.append(json.loads(line))
+            except json.JSONDecodeError as exc:
+                raise CliError(f"Invalid journal JSON on {path}:{line_number}: {exc}") from exc
+    return entries
+
+
+def build_journal_entry(event_type: str, payload: dict, status: str = "ok") -> dict:
+    return {
+        "journal_entry_id": str(uuid.uuid4()),
+        "recorded_at": utc_now(),
+        "event_type": event_type,
+        "status": status,
+        "workflow_run_id": payload.get("workflow_run_id"),
+        "symbol": payload.get("symbol"),
+        "timeframe": payload.get("timeframe"),
+        "classification": payload.get("classification"),
+        "direction": payload.get("direction"),
+        "valid_detection": payload.get("valid_detection"),
+        "payload": payload,
+    }
 
 
 def request_oanda_candles(symbol: str, timeframe: str, count: int) -> dict:
@@ -392,7 +445,93 @@ def cmd_workflow_validate_setup(args: argparse.Namespace) -> int:
     context = read_json_stdin()
     result = build_detection_result(context)
     validate_basic_schema(result, "detection-result.schema.json")
+    if args.journal:
+        workflow_payload = {
+            "workflow_run_id": result["workflow_run_id"],
+            "symbol": result.get("symbol"),
+            "timeframe": result.get("timeframe"),
+            "workflow": "validate_setup",
+        }
+        append_journal_entry(
+            build_journal_entry("workflow_run", workflow_payload),
+            args.journal_date,
+            args.journal_path,
+        )
+        append_journal_entry(
+            build_journal_entry("setup_decision", result),
+            args.journal_date,
+            args.journal_path,
+        )
     return write_json(result)
+
+
+def cmd_journal_append(args: argparse.Namespace) -> int:
+    payload = read_json_stdin()
+    event_type = args.event_type
+    if event_type == "auto":
+        event_type = "setup_decision" if "classification" in payload else "workflow_run"
+    entry = build_journal_entry(event_type, payload, args.status)
+    path = append_journal_entry(entry, args.date, args.journal_path)
+    return write_json({"journaled": True, "path": str(path), "journal_entry_id": entry["journal_entry_id"]})
+
+
+def cmd_journal_list(args: argparse.Namespace) -> int:
+    entries = iter_journal_entries(args.date, args.journal_path)
+    if args.limit:
+        entries = entries[-args.limit :]
+    return write_json({"date": args.date or utc_now()[:10], "count": len(entries), "entries": entries})
+
+
+def summarize_entries(entries: list[dict], date_text: str) -> dict:
+    counts = {
+        "total": len(entries),
+        "valid": 0,
+        "weak": 0,
+        "invalid": 0,
+        "failures": 0,
+    }
+    symbols: dict[str, int] = {}
+    timeframes: dict[str, int] = {}
+    latest = None
+
+    for entry in entries:
+        classification = entry.get("classification")
+        if classification in ("valid", "weak", "invalid"):
+            counts[classification] += 1
+        if entry.get("status") != "ok":
+            counts["failures"] += 1
+        if entry.get("symbol"):
+            symbols[entry["symbol"]] = symbols.get(entry["symbol"], 0) + 1
+        if entry.get("timeframe"):
+            timeframes[entry["timeframe"]] = timeframes.get(entry["timeframe"], 0) + 1
+        latest = entry
+
+    summary_lines = [
+        f"Pip Chaser daily summary for {date_text}",
+        f"Total journaled events: {counts['total']}",
+        f"Valid detections: {counts['valid']}",
+        f"Weak detections: {counts['weak']}",
+        f"Invalid detections: {counts['invalid']}",
+        f"Failures: {counts['failures']}",
+    ]
+    if latest:
+        summary_lines.append(
+            f"Latest: {latest.get('symbol', 'unknown')} {latest.get('timeframe', 'unknown')} "
+            f"{latest.get('classification', latest.get('event_type', 'event'))}"
+        )
+
+    return {
+        "date": date_text,
+        "counts": counts,
+        "symbols": symbols,
+        "timeframes": timeframes,
+        "telegram_summary_draft": "\n".join(summary_lines),
+    }
+
+
+def cmd_journal_summary(args: argparse.Namespace) -> int:
+    date_text = args.date or utc_now()[:10]
+    return write_json(summarize_entries(iter_journal_entries(date_text, args.journal_path), date_text))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -427,7 +566,35 @@ def build_parser() -> argparse.ArgumentParser:
     workflows = subparsers.add_parser("workflows")
     workflows_sub = workflows.add_subparsers(dest="workflows_command", required=True)
     validate_setup = workflows_sub.add_parser("validate-setup")
+    validate_setup.add_argument("--journal", action="store_true")
+    validate_setup.add_argument("--journal-date")
+    validate_setup.add_argument("--journal-path")
     validate_setup.set_defaults(func=cmd_workflow_validate_setup)
+
+    journal = subparsers.add_parser("journal")
+    journal_sub = journal.add_subparsers(dest="journal_command", required=True)
+    append = journal_sub.add_parser("append")
+    append.add_argument("--event-type", default="auto")
+    append.add_argument("--status", default="ok")
+    append.add_argument("--date")
+    append.add_argument("--journal-path")
+    append.set_defaults(func=cmd_journal_append)
+
+    list_entries = journal_sub.add_parser("list")
+    list_entries.add_argument("--date")
+    list_entries.add_argument("--limit", type=int)
+    list_entries.add_argument("--journal-path")
+    list_entries.set_defaults(func=cmd_journal_list)
+
+    summary = journal_sub.add_parser("summary")
+    summary.add_argument("--date")
+    summary.add_argument("--journal-path")
+    summary.set_defaults(func=cmd_journal_summary)
+
+    summarize = journal_sub.add_parser("summarize")
+    summarize.add_argument("--date")
+    summarize.add_argument("--journal-path")
+    summarize.set_defaults(func=cmd_journal_summary)
 
     return parser
 

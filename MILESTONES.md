@@ -197,14 +197,20 @@ Current note:
 ## Milestone 8: Journaling, Logs, and Review
 Goal: make every decision auditable and reviewable.
 
-- [ ] Journal every workflow run
-- [ ] Journal every setup decision
-- [ ] Add daily summaries
-- [ ] Add failure summaries
-- [ ] Add enough logs to reconstruct what happened after an incident
+- [x] Journal every workflow run
+- [x] Journal every setup decision
+- [x] Add daily summaries
+- [x] Add failure summaries
+- [x] Add enough logs to reconstruct what happened after an incident
 
 Definition of done:
 - The team can review any alert and understand the full reasoning path
+
+Current note:
+- Journaling is documented in `docs/journaling.md`
+- Runtime journal files are written to ignored local `journal/YYYY-MM-DD.jsonl` files
+- `./bin/pip-chaser workflows validate-setup --journal` records setup decisions
+- `./bin/pip-chaser journal list` and `./bin/pip-chaser journal summary` support review
 
 ## Milestone 9: Detection Trial
 Goal: run the full system continuously and learn from real behavior.

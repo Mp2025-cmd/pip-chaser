@@ -198,3 +198,14 @@ Smoke test note:
 - OANDA practice candles were verified for `USD_JPY` 15m and `EUR_USD` 1h.
 - The demo API token was used only as a temporary environment variable and was not committed.
 - Live `EUR_USD` 15m candles were piped into `./bin/pip-chaser workflows validate-setup` and produced a structured detection result.
+
+## 11. Journaling and review
+
+- [x] Add local JSONL journal storage
+- [x] Add setup-decision journaling
+- [x] Add journal listing command
+- [x] Add daily summary command
+- [x] Keep runtime journal files out of Git
+
+Source of truth:
+- `docs/journaling.md`

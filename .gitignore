@@ -2,6 +2,8 @@
 .env.*
 !.env.example
 
+journal/
+
 __pycache__/
 *.pyc
 
