@@ -12,7 +12,7 @@ steps:
   - id: validate_request
     command: "pip-chaser market-context validate-request --json"
   - id: collect_context
-    command: "pip-chaser market-context collect --json"
+    command: "./bin/pip-chaser market-context collect --symbol EUR_USD --timeframe 15m --count 50"
     stdin: $validate_request.json
   - id: validate_setups
     command: "pip-chaser workflows validate-setup --json"

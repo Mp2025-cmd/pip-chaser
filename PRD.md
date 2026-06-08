@@ -224,6 +224,8 @@ Add:
 
 The market context contract lives in [docs/market-context-inputs.md](docs/market-context-inputs.md).
 
+OANDA demo candle setup lives in [docs/oanda-demo-data.md](docs/oanda-demo-data.md).
+
 ### Phase 5: Later Execution Boundary
 Only after a later strategy document defines actual trade rules:
 - add the narrow OANDA paper-trading boundary

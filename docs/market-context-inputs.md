@@ -108,14 +108,20 @@ The JSON Schema lives in:
 
 ## Data Source Boundary
 
-The preferred future source for candles is OANDA because OANDA is already the planned broker boundary.
+The preferred source for candles is OANDA practice/demo because OANDA is already the planned paper-trading broker boundary.
 
-For now:
-- do not require OANDA credentials to validate the skill
-- allow manual/sample candle JSON for scenario tests
-- keep live market-data fetching as a small adapter behind the market context boundary
+Current adapter:
+- `bin/pip-chaser market-context collect`
+- reads from OANDA practice/demo only
+- requires `OANDA_PAPER_API_KEY`
+- returns normalized market-context JSON
+- does not place trades
 
 The adapter should return normalized candle JSON and should not make trading decisions.
+
+OANDA setup notes live in:
+
+- `docs/oanda-demo-data.md`
 
 ## Reusable Tool Decision
 

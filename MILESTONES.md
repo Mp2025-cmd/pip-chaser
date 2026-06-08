@@ -97,7 +97,8 @@ Goal: define and fetch the minimum data the workflows need.
 - [x] Decide the minimum symbols to support first
 - [x] Decide the minimum timeframes to support first
 - [x] Define the structured setup-validation input format
-- [ ] Pull candle data for the supported timeframes
+- [x] Add OANDA practice candle-data adapter
+- [ ] Smoke test OANDA candle pulling with demo credentials
 - [x] Normalize candle data into the workflow input format
 - [x] Decide whether to include chart images in v1
 - [x] Evaluate reusable MCP/context tools for market context
@@ -111,7 +112,8 @@ Current note:
 - Market context is documented in `docs/market-context-inputs.md`
 - JSON schemas live in `schemas/market-context.schema.json` and `schemas/detection-result.schema.json`
 - V1 symbols are `EUR_USD`, `GBP_USD`, and `USD_JPY`
-- Live candle pulling remains pending until a market-data adapter is wired and tested
+- Read-only OANDA practice candle collection exists in `bin/pip-chaser market-context collect`
+- Live candle smoke testing remains pending until `OANDA_PAPER_API_KEY` is available in the runtime
 
 ## Milestone 4: Lobster Workflow Design
 Goal: define deterministic detection workflows before allowing execution.
@@ -132,7 +134,8 @@ Definition of done:
 Current note:
 - Workflow contracts are documented in `docs/lobster-workflows.md`
 - Lobster scaffolds live in `workflows/lobster`
-- The scaffolds intentionally call a future small `pip-chaser` JSON CLI; runtime execution is pending until that CLI or equivalent OpenClaw tools exist
+- `market_scan` now points at the local `bin/pip-chaser` OANDA candle adapter
+- Runtime execution remains pending for strategy classification, Telegram drafting, and journal commands
 
 ## Milestone 5: Risk and Safety Layer
 Goal: prepare safety rules before broker execution exists.

@@ -180,12 +180,15 @@ Telegram UX source of truth:
 - [x] Add detection result JSON schema
 - [x] Document Lobster workflow contracts
 - [x] Add Lobster workflow scaffolds
-- [ ] Wire a live market-data adapter
+- [x] Add read-only OANDA practice candle adapter
+- [ ] Smoke test OANDA candle adapter with demo credentials
 - [ ] Make the Lobster scaffolds runnable against real JSON commands
 
 Source files:
 - `docs/market-context-inputs.md`
+- `docs/oanda-demo-data.md`
 - `docs/lobster-workflows.md`
 - `schemas/market-context.schema.json`
 - `schemas/detection-result.schema.json`
+- `bin/pip-chaser`
 - `workflows/lobster/`

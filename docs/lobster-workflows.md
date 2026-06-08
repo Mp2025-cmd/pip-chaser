@@ -28,7 +28,7 @@ Inputs:
 
 Steps:
 - validate requested symbols and timeframes
-- collect or receive normalized candle data
+- collect or receive normalized candle data using `bin/pip-chaser market-context collect`
 - pass each market context object to `validate_setup`
 - collect candidate results
 - send only valid/strong alerts to `trade_explain` for Telegram-safe wording
@@ -135,3 +135,8 @@ Workflow scaffolds live in:
 - `workflows/lobster/daily_summary.lobster`
 
 These files are contracts for implementation. They should be wired to real JSON-producing commands once the market-data adapter exists.
+
+Current implementation note:
+- OANDA practice candle collection now exists in `bin/pip-chaser market-context collect`
+- strategy classification commands are still pending
+- Telegram delivery commands are still pending
