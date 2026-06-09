@@ -19,7 +19,7 @@ import urllib.request
 import uuid
 
 
-SUPPORTED_SYMBOLS = ("EUR_USD", "GBP_USD", "USD_JPY")
+SUPPORTED_SYMBOLS = ("EUR_USD", "GBP_USD", "USD_JPY", "XAU_USD")
 TIMEFRAME_TO_OANDA = {
     "15m": "M15",
     "1h": "H1",
@@ -267,7 +267,50 @@ def request_oanda_candles(symbol: str, timeframe: str, count: int) -> dict:
         raise CliError(f"OANDA candle request failed: {exc.reason}") from exc
 
 
+def request_oanda_price(symbol: str) -> dict:
+    query = urllib.parse.urlencode({"price": "M", "granularity": "M1", "count": "2"})
+    url = f"{oanda_base_url()}/v3/instruments/{symbol}/candles?{query}"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {env_token()}",
+            "Content-Type": "application/json",
+            "Accept-Datetime-Format": "RFC3339",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise CliError(f"OANDA price request failed with HTTP {exc.code}: {detail}") from exc
+    except urllib.error.URLError as exc:
+        raise CliError(f"OANDA price request failed: {exc.reason}") from exc
+
+    closed = [candle for candle in payload.get("candles", []) if candle.get("complete") is True]
+    if not closed:
+        raise CliError("OANDA price request returned no closed candles")
+    candle = closed[-1]
+    mid = candle.get("mid") or {}
+    return {
+        "symbol": symbol,
+        "source": "oanda_practice_candles",
+        "mode": "paper_data",
+        "retrieved_at": utc_now(),
+        "timestamp": normalize_oanda_time(candle["time"]),
+        "price": float(mid["c"]),
+        "open": float(mid["o"]),
+        "high": float(mid["h"]),
+        "low": float(mid["l"]),
+        "close": float(mid["c"]),
+        "complete": bool(candle.get("complete")),
+    }
+
+
 def price_decimals(symbol: str) -> int:
+    if symbol == "XAU_USD":
+        return 3
     return 3 if "JPY" in symbol else 5
 
 
@@ -432,6 +475,11 @@ def cmd_collect(args: argparse.Namespace) -> int:
         workflow_run_id=args.workflow_run_id or str(uuid.uuid4()),
     )
     return write_json(context)
+
+
+def cmd_price(args: argparse.Namespace) -> int:
+    symbol = require_symbol(args.symbol)
+    return write_json(request_oanda_price(symbol))
 
 
 def required_fields_for_schema(schema_path: str) -> tuple[str, ...]:
@@ -929,6 +977,10 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--chat-id")
     collect.add_argument("--message-id")
     collect.set_defaults(func=cmd_collect)
+
+    price = market_context_sub.add_parser("price")
+    price.add_argument("--symbol", required=True)
+    price.set_defaults(func=cmd_price)
 
     schemas = subparsers.add_parser("schemas")
     schemas_sub = schemas.add_subparsers(dest="schemas_command", required=True)

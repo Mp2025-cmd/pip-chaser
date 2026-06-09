@@ -11,10 +11,12 @@ Start with a small forex set:
 - `EUR_USD`
 - `GBP_USD`
 - `USD_JPY`
+- `XAU_USD`
 
 Reason:
 - they are liquid major pairs
 - they are easy to recognize in OANDA-style instrument format
+- gold is included because the team is actively testing XAU/USD from Telegram
 - they are enough to test detection quality without creating alert noise
 
 Additional pairs can be added after the detection trial.
@@ -127,9 +129,11 @@ The preferred source for candles is OANDA practice/demo because OANDA is already
 
 Current adapter:
 - `bin/pip-chaser market-context collect`
+- `bin/pip-chaser market-context price`
 - reads from OANDA practice/demo only
 - requires `OANDA_PAPER_API_KEY`
 - returns normalized market-context JSON
+- returns a latest closed-candle quote for quick price checks
 - computes first-pass support/resistance context from closed candles
 - does not place trades
 

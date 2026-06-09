@@ -19,7 +19,7 @@
     },
     "symbol": {
       "type": "string",
-      "enum": ["EUR_USD", "GBP_USD", "USD_JPY"]
+      "enum": ["EUR_USD", "GBP_USD", "USD_JPY", "XAU_USD"]
     },
     "timeframe": {
       "type": "string",

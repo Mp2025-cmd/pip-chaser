@@ -112,7 +112,7 @@ Definition of done:
 Current note:
 - Market context is documented in `docs/market-context-inputs.md`
 - JSON schemas live in `schemas/market-context.schema.json` and `schemas/detection-result.schema.json`
-- V1 symbols are `EUR_USD`, `GBP_USD`, and `USD_JPY`
+- V1 symbols are `EUR_USD`, `GBP_USD`, `USD_JPY`, and `XAU_USD`
 - Read-only OANDA practice candle collection exists in `bin/pip-chaser market-context collect`
 - OANDA practice candle smoke testing is verified for `USD_JPY` 15m and `EUR_USD` 1h
 - The demo token was used only as a temporary environment variable and was not committed

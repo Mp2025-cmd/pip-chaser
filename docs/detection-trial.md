@@ -55,6 +55,7 @@ The scan checks the v1 symbols and timeframes:
 - `EUR_USD`
 - `GBP_USD`
 - `USD_JPY`
+- `XAU_USD`
 - `15m`
 - `1h`
 - `4h`

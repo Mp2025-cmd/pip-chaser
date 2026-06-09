@@ -55,6 +55,12 @@ From the repo root:
 ./bin/pip-chaser market-context collect --symbol EUR_USD --timeframe 15m --count 50
 ```
 
+Quick latest closed-candle price:
+
+```bash
+./bin/pip-chaser market-context price --symbol XAU_USD
+```
+
 Expected result:
 
 - JSON output
