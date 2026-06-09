@@ -37,6 +37,10 @@ By the end of Milestone 1 we should have:
   - does not store secrets
 - `CHECKLIST.md`
   - step-by-step operational checklist for bringing the VPS online
+- `pip-chaser-signal-scan.service`
+  - systemd service for one scheduled OANDA demo scan
+- `pip-chaser-signal-scan.timer`
+  - systemd timer that runs the scan every 5 minutes
 
 ## Notes from the official OpenClaw docs
 
@@ -59,3 +63,32 @@ Milestone 1 does not yet include:
 
 Those come after the hosted OpenClaw runtime is in place.
 
+## Scheduled Signal Scanner
+
+The demo signal scanner runs separately from OpenClaw chat.
+
+Runtime command:
+
+```bash
+/opt/pip-chaser/bin/pip-chaser workflows market-scan \
+  --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY \
+  --timeframes 15m,1h \
+  --count 80 \
+  --journal \
+  --send-telegram
+```
+
+Secrets live only on the VPS:
+
+```bash
+/etc/pip-chaser/pip-chaser.env
+```
+
+Required keys:
+
+```bash
+OANDA_PAPER_API_KEY=
+OANDA_PAPER_API_BASE=https://api-fxpractice.oanda.com
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_SIGNAL_CHAT_ID=
+```

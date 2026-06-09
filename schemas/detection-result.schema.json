@@ -36,6 +36,9 @@
       "type": "string",
       "enum": ["15m", "1h", "4h", "Daily", "unknown"]
     },
+    "current_price": {
+      "type": ["number", "null"]
+    },
     "center_candle_timestamp": {
       "type": ["string", "null"],
       "format": "date-time"

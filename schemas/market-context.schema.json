@@ -25,6 +25,9 @@
       "type": "string",
       "enum": ["15m", "1h", "4h", "Daily"]
     },
+    "current_price": {
+      "type": ["number", "null"]
+    },
     "source": {
       "type": "object",
       "additionalProperties": false,
@@ -142,6 +145,12 @@
           "type": "string",
           "enum": ["aligned", "conflicting", "missing", "unknown"]
         },
+        "ema_20": {
+          "type": ["number", "null"]
+        },
+        "ema_50": {
+          "type": ["number", "null"]
+        },
         "notes": {
           "type": "string"
         }
@@ -158,6 +167,18 @@
         "macd_confirmation": {
           "type": "string",
           "enum": ["aligned", "conflicting", "missing", "unknown"]
+        },
+        "rsi": {
+          "type": ["number", "null"]
+        },
+        "macd": {
+          "type": ["number", "null"]
+        },
+        "macd_signal": {
+          "type": ["number", "null"]
+        },
+        "macd_histogram": {
+          "type": ["number", "null"]
         },
         "notes": {
           "type": "string"

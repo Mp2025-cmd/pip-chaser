@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -28,6 +29,8 @@ TIMEFRAME_TO_OANDA = {
 }
 DEFAULT_OANDA_PRACTICE_URL = "https://api-fxpractice.oanda.com"
 DEFAULT_JOURNAL_DIR = "journal"
+DEFAULT_SCAN_SYMBOLS = ("XAU_USD", "EUR_USD", "GBP_USD", "USD_JPY")
+DEFAULT_SCAN_TIMEFRAMES = ("15m", "1h")
 
 
 class CliError(Exception):
@@ -184,13 +187,17 @@ def previous_detection_keys(date_text: str | None, path_override: str | None) ->
 def build_telegram_signal_message(result: dict) -> str:
     direction = str(result.get("direction", "unknown")).title()
     confidence = str(result.get("classification", "unknown")).title()
+    current_price = result.get("current_price")
+    price_line = f"Current OANDA price: {current_price}\n" if current_price is not None else ""
     return (
         "Pip Chaser Signal\n\n"
         f"Pair: {result.get('symbol', 'unknown')}\n"
         f"Timeframe: {result.get('timeframe', 'unknown')}\n"
+        f"{price_line}"
         f"Direction: {direction}\n"
         f"Confidence: {confidence}\n\n"
         f"Why:\n{result.get('reasoning_summary', 'No reasoning summary available.')}\n\n"
+        f"Confirmation:\n{result.get('confirmation_notes', 'No confirmation notes available.')}\n\n"
         "Note: Detection only. No trade has been placed."
     )
 
@@ -257,14 +264,23 @@ def request_oanda_candles(symbol: str, timeframe: str, count: int) -> dict:
         },
     )
 
-    try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise CliError(f"OANDA candle request failed with HTTP {exc.code}: {detail}") from exc
-    except urllib.error.URLError as exc:
-        raise CliError(f"OANDA candle request failed: {exc.reason}") from exc
+    for attempt in range(1, 4):
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            if attempt < 3 and (exc.code == 429 or exc.code >= 500):
+                time.sleep(attempt)
+                continue
+            raise CliError(f"OANDA candle request failed with HTTP {exc.code}: {detail}") from exc
+        except urllib.error.URLError as exc:
+            if attempt < 3:
+                time.sleep(attempt)
+                continue
+            raise CliError(f"OANDA candle request failed: {exc.reason}") from exc
+
+    raise CliError("OANDA candle request failed after retries")
 
 
 def request_oanda_price(symbol: str) -> dict:
@@ -279,14 +295,26 @@ def request_oanda_price(symbol: str) -> dict:
         },
     )
 
-    try:
-        with urllib.request.urlopen(request, timeout=20) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise CliError(f"OANDA price request failed with HTTP {exc.code}: {detail}") from exc
-    except urllib.error.URLError as exc:
-        raise CliError(f"OANDA price request failed: {exc.reason}") from exc
+    payload = None
+    for attempt in range(1, 4):
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                break
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            if attempt < 3 and (exc.code == 429 or exc.code >= 500):
+                time.sleep(attempt)
+                continue
+            raise CliError(f"OANDA price request failed with HTTP {exc.code}: {detail}") from exc
+        except urllib.error.URLError as exc:
+            if attempt < 3:
+                time.sleep(attempt)
+                continue
+            raise CliError(f"OANDA price request failed: {exc.reason}") from exc
+
+    if payload is None:
+        raise CliError("OANDA price request failed after retries")
 
     closed = [candle for candle in payload.get("candles", []) if candle.get("complete") is True]
     if not closed:
@@ -321,6 +349,126 @@ def round_price(symbol: str, price: float) -> float:
 def average_range(candles: list[dict]) -> float:
     ranges = [candle_value(candle, "high") - candle_value(candle, "low") for candle in candles]
     return sum(ranges) / len(ranges) if ranges else 0.0
+
+
+def latest_closed_price(candles: list[dict], symbol: str) -> float | None:
+    complete_candles = [candle for candle in candles if candle.get("complete") is True]
+    if not complete_candles:
+        return None
+    return round_price(symbol, candle_value(complete_candles[-1], "close"))
+
+
+def ema_series(values: list[float], period: int) -> list[float]:
+    if not values:
+        return []
+    multiplier = 2 / (period + 1)
+    ema_values = [values[0]]
+    for value in values[1:]:
+        ema_values.append((value - ema_values[-1]) * multiplier + ema_values[-1])
+    return ema_values
+
+
+def rsi_value(values: list[float], period: int = 14) -> float | None:
+    if len(values) <= period:
+        return None
+    gains = []
+    losses = []
+    for index in range(1, period + 1):
+        change = values[index] - values[index - 1]
+        gains.append(max(change, 0.0))
+        losses.append(abs(min(change, 0.0)))
+
+    average_gain = sum(gains) / period
+    average_loss = sum(losses) / period
+    for index in range(period + 1, len(values)):
+        change = values[index] - values[index - 1]
+        gain = max(change, 0.0)
+        loss = abs(min(change, 0.0))
+        average_gain = ((average_gain * (period - 1)) + gain) / period
+        average_loss = ((average_loss * (period - 1)) + loss) / period
+
+    if average_loss == 0:
+        return 100.0
+    relative_strength = average_gain / average_loss
+    return 100 - (100 / (1 + relative_strength))
+
+
+def macd_values(values: list[float]) -> tuple[float | None, float | None, float | None]:
+    if len(values) < 35:
+        return None, None, None
+    ema12 = ema_series(values, 12)
+    ema26 = ema_series(values, 26)
+    macd_line = [fast - slow for fast, slow in zip(ema12, ema26)]
+    signal_line = ema_series(macd_line, 9)
+    if not signal_line:
+        return None, None, None
+    histogram = macd_line[-1] - signal_line[-1]
+    return macd_line[-1], signal_line[-1], histogram
+
+
+def build_trend_and_indicator_context(candles: list[dict], symbol: str) -> tuple[dict, dict]:
+    complete_candles = [candle for candle in candles if candle.get("complete") is True]
+    candidate = find_recent_fractal_candidate(complete_candles)
+    closes = [candle_value(candle, "close") for candle in complete_candles]
+    if len(closes) < 50 or not candidate:
+        return (
+            {
+                "direction": "unknown",
+                "moving_average_confirmation": "missing",
+                "notes": "Need at least 50 closed candles and a recent fractal candidate for EMA 20/50 confirmation.",
+            },
+            {
+                "rsi_confirmation": "missing",
+                "macd_confirmation": "missing",
+                "rsi": None,
+                "macd": None,
+                "macd_signal": None,
+                "macd_histogram": None,
+                "notes": "Need enough closed candles and a recent fractal candidate for RSI 14 and MACD 12/26/9 confirmation.",
+            },
+        )
+
+    direction, _window = candidate
+    ema20 = ema_series(closes, 20)[-1]
+    ema50 = ema_series(closes, 50)[-1]
+    latest_close = closes[-1]
+    trend_direction = "up" if ema20 > ema50 else "down" if ema20 < ema50 else "sideways"
+    bullish_ma = trend_direction == "up" and latest_close >= ema20
+    bearish_ma = trend_direction == "down" and latest_close <= ema20
+    ma_aligned = bullish_ma if direction == "bullish" else bearish_ma
+
+    rsi = rsi_value(closes, 14)
+    macd_line, macd_signal, macd_histogram = macd_values(closes)
+    bullish_rsi = rsi is not None and 50 <= rsi <= 70
+    bearish_rsi = rsi is not None and 30 <= rsi <= 50
+    bullish_macd = macd_line is not None and macd_signal is not None and macd_line > macd_signal
+    bearish_macd = macd_line is not None and macd_signal is not None and macd_line < macd_signal
+    rsi_aligned = bullish_rsi if direction == "bullish" else bearish_rsi
+    macd_aligned = bullish_macd if direction == "bullish" else bearish_macd
+
+    trend_context = {
+        "direction": trend_direction,
+        "moving_average_confirmation": "aligned" if ma_aligned else "conflicting",
+        "ema_20": round_price(symbol, ema20),
+        "ema_50": round_price(symbol, ema50),
+        "notes": (
+            f"EMA 20/50 trend is {trend_direction}; "
+            f"{direction} fractal MA confirmation is {'aligned' if ma_aligned else 'conflicting'}."
+        ),
+    }
+    indicator_context = {
+        "rsi_confirmation": "aligned" if rsi_aligned else "conflicting",
+        "macd_confirmation": "aligned" if macd_aligned else "conflicting",
+        "rsi": round(rsi, 2) if rsi is not None else None,
+        "macd": round_price(symbol, macd_line) if macd_line is not None else None,
+        "macd_signal": round_price(symbol, macd_signal) if macd_signal is not None else None,
+        "macd_histogram": round_price(symbol, macd_histogram) if macd_histogram is not None else None,
+        "notes": (
+            f"RSI 14 is {round(rsi, 2) if rsi is not None else 'missing'}; "
+            f"MACD 12/26/9 confirmation is {'aligned' if macd_aligned else 'conflicting'}."
+        ),
+    }
+    return trend_context, indicator_context
 
 
 def find_recent_fractal_candidate(candles: list[dict]) -> tuple[str, list[dict]] | None:
@@ -426,10 +574,13 @@ def normalize_market_context(
             }
         )
 
+    trend_context, indicator_context = build_trend_and_indicator_context(candles, symbol)
+
     return {
         "workflow_run_id": workflow_run_id,
         "symbol": symbol,
         "timeframe": timeframe,
+        "current_price": latest_closed_price(candles, symbol),
         "source": {
             "name": "oanda_candles",
             "mode": "paper_data",
@@ -438,16 +589,8 @@ def normalize_market_context(
         "requested_by": requested_by,
         "candles": candles,
         "support_resistance_context": build_support_resistance_context(candles, symbol),
-        "trend_context": {
-            "direction": "unknown",
-            "moving_average_confirmation": "missing",
-            "notes": "Moving Average confirmation is not computed by the OANDA candle adapter yet.",
-        },
-        "indicator_context": {
-            "rsi_confirmation": "missing",
-            "macd_confirmation": "missing",
-            "notes": "RSI and MACD confirmation are not computed by the OANDA candle adapter yet.",
-        },
+        "trend_context": trend_context,
+        "indicator_context": indicator_context,
     }
 
 
@@ -605,6 +748,7 @@ def build_detection_result(context: dict) -> dict:
         "workflow_run_id": context["workflow_run_id"],
         "symbol": context.get("symbol"),
         "timeframe": context.get("timeframe", "unknown"),
+        "current_price": context.get("current_price"),
         "center_candle_timestamp": None,
         "support_resistance_context": context.get("support_resistance_context"),
     }
@@ -712,8 +856,8 @@ def cmd_workflow_validate_setup(args: argparse.Namespace) -> int:
 
 
 def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
-    symbols = [require_symbol(symbol) for symbol in parse_csv_values(args.symbols, SUPPORTED_SYMBOLS)]
-    timeframes = [require_timeframe(timeframe) for timeframe in parse_csv_values(args.timeframes, tuple(TIMEFRAME_TO_OANDA))]
+    symbols = [require_symbol(symbol) for symbol in parse_csv_values(args.symbols, DEFAULT_SCAN_SYMBOLS)]
+    timeframes = [require_timeframe(timeframe) for timeframe in parse_csv_values(args.timeframes, DEFAULT_SCAN_TIMEFRAMES)]
     if args.count < 5 or args.count > 5000:
         raise CliError("count must be between 5 and 5000")
     if args.send_telegram and not args.journal:
@@ -998,7 +1142,7 @@ def build_parser() -> argparse.ArgumentParser:
     market_scan = workflows_sub.add_parser("market-scan")
     market_scan.add_argument("--symbols")
     market_scan.add_argument("--timeframes")
-    market_scan.add_argument("--count", type=int, default=50)
+    market_scan.add_argument("--count", type=int, default=80)
     market_scan.add_argument("--workflow-run-id")
     market_scan.add_argument("--channel", default="manual_test", choices=("telegram", "scheduled", "manual_test"))
     market_scan.add_argument("--user-id", default="unknown")

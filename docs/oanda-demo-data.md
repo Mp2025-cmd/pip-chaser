@@ -61,6 +61,8 @@ Quick latest closed-candle price:
 ./bin/pip-chaser market-context price --symbol XAU_USD
 ```
 
+OANDA read calls retry transient HTTP `429` and `5xx` failures before returning a workflow failure.
+
 Expected result:
 
 - JSON output

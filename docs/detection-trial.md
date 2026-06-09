@@ -36,6 +36,17 @@ Send valid signals to the approved Telegram group:
 ./bin/pip-chaser workflows market-scan --journal --send-telegram
 ```
 
+The VPS scheduler runs the same scan every 5 minutes for:
+
+- `XAU_USD`
+- `EUR_USD`
+- `GBP_USD`
+- `USD_JPY`
+- `15m`
+- `1h`
+
+Scheduled scans request 80 candles per symbol/timeframe so EMA 20/50, RSI 14, and MACD 12/26/9 have enough history.
+
 Review the journal:
 
 ```bash
@@ -64,8 +75,10 @@ The scan checks the v1 symbols and timeframes:
 For each pair/timeframe it:
 
 - pulls OANDA demo candles
+- retries transient OANDA read failures before marking a scan as failed
 - normalizes the data
 - computes first-pass support/resistance from recent swing pivots
+- computes EMA 20/50, RSI 14, and MACD 12/26/9 confirmation
 - detects the most recent complete 5-candle fractal
 - marks the setup as `valid`, `weak`, or `invalid`
 - flags duplicate alerts using symbol, timeframe, direction, and center candle timestamp

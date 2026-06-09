@@ -78,6 +78,11 @@ These values may come from:
 
 If confirmation values are missing, the setup can still be described, but confidence should be downgraded to weak or incomplete.
 
+Current automatic defaults:
+- EMA 20/50 for trend confirmation
+- RSI 14 for momentum confirmation
+- MACD 12/26/9 for momentum confirmation
+
 ## Automatic Support/Resistance
 
 The OANDA adapter computes a first-pass support/resistance context from closed candles.
