@@ -36,7 +36,7 @@ Send valid signals to the approved Telegram group:
 ./bin/pip-chaser workflows market-scan --journal --send-telegram
 ```
 
-The VPS scheduler runs the same scan every 5 minutes for:
+The VPS scheduler runs the same scan every 15 minutes for:
 
 - `XAU_USD`
 - `EUR_USD`
@@ -46,6 +46,7 @@ The VPS scheduler runs the same scan every 5 minutes for:
 - `1h`
 
 Scheduled scans request 80 candles per symbol/timeframe so EMA 20/50, RSI 14, and MACD 12/26/9 have enough history.
+Telegram delivery is rate-limited to one alert per scan, with a 240-minute cooldown per pair/timeframe/direction.
 
 Review the journal:
 

@@ -40,7 +40,7 @@ By the end of Milestone 1 we should have:
 - `pip-chaser-signal-scan.service`
   - systemd service for one scheduled OANDA demo scan
 - `pip-chaser-signal-scan.timer`
-  - systemd timer that runs the scan every 5 minutes
+  - systemd timer that runs the scan every 15 minutes
 
 ## Notes from the official OpenClaw docs
 
@@ -75,8 +75,13 @@ Runtime command:
   --timeframes 15m,1h \
   --count 80 \
   --journal \
-  --send-telegram
+  --send-telegram \
+  --channel scheduled \
+  --alert-cooldown-minutes 240 \
+  --max-alerts 1
 ```
+
+Telegram delivery is intentionally conservative: one alert per scan, and no repeated alert for the same pair/timeframe/direction for 240 minutes.
 
 Secrets live only on the VPS:
 

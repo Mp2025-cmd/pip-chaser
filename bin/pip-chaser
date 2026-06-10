@@ -31,6 +31,8 @@ DEFAULT_OANDA_PRACTICE_URL = "https://api-fxpractice.oanda.com"
 DEFAULT_JOURNAL_DIR = "journal"
 DEFAULT_SCAN_SYMBOLS = ("XAU_USD", "EUR_USD", "GBP_USD", "USD_JPY")
 DEFAULT_SCAN_TIMEFRAMES = ("15m", "1h")
+DEFAULT_ALERT_COOLDOWN_MINUTES = 240
+DEFAULT_MAX_ALERTS_PER_SCAN = 1
 
 
 class CliError(Exception):
@@ -46,6 +48,17 @@ def normalize_oanda_time(value: str) -> str:
         value = value[:-1] + "+00:00"
     parsed = dt.datetime.fromisoformat(value)
     return parsed.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def parse_utc_datetime(value: str | None) -> dt.datetime | None:
+    if not value:
+        return None
+    try:
+        if value.endswith("Z"):
+            value = value[:-1] + "+00:00"
+        return dt.datetime.fromisoformat(value).astimezone(dt.timezone.utc)
+    except ValueError:
+        return None
 
 
 def require_symbol(symbol: str) -> str:
@@ -173,6 +186,18 @@ def detection_duplicate_key(result: dict) -> str | None:
     )
 
 
+def alert_fingerprint(result: dict) -> str | None:
+    if result.get("direction") not in ("bullish", "bearish"):
+        return None
+    return "|".join(
+        [
+            str(result.get("symbol")),
+            str(result.get("timeframe")),
+            str(result.get("direction")),
+        ]
+    )
+
+
 def previous_detection_keys(date_text: str | None, path_override: str | None) -> set[str]:
     keys = set()
     for entry in iter_journal_entries(date_text, path_override):
@@ -182,6 +207,26 @@ def previous_detection_keys(date_text: str | None, path_override: str | None) ->
         if key:
             keys.add(key)
     return keys
+
+
+def recent_alert_fingerprints(date_text: str | None, path_override: str | None, cooldown_minutes: int) -> set[str]:
+    if cooldown_minutes <= 0:
+        return set()
+    cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=cooldown_minutes)
+    fingerprints = set()
+    for entry in iter_journal_entries(date_text, path_override):
+        if entry.get("event_type") != "telegram_delivery":
+            continue
+        payload = entry.get("payload") or {}
+        if payload.get("delivery_status") != "sent":
+            continue
+        recorded_at = parse_utc_datetime(str(entry.get("recorded_at") or ""))
+        if not recorded_at or recorded_at < cutoff:
+            continue
+        fingerprint = alert_fingerprint(payload)
+        if fingerprint:
+            fingerprints.add(fingerprint)
+    return fingerprints
 
 
 def build_telegram_signal_message(result: dict) -> str:
@@ -860,6 +905,10 @@ def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
     timeframes = [require_timeframe(timeframe) for timeframe in parse_csv_values(args.timeframes, DEFAULT_SCAN_TIMEFRAMES)]
     if args.count < 5 or args.count > 5000:
         raise CliError("count must be between 5 and 5000")
+    if args.alert_cooldown_minutes < 0:
+        raise CliError("alert cooldown must be zero or greater")
+    if args.max_alerts < 0:
+        raise CliError("max alerts must be zero or greater")
     if args.send_telegram and not args.journal:
         raise CliError("Telegram delivery requires --journal so signals and skips are auditable.")
     telegram_token = None
@@ -868,7 +917,13 @@ def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
         telegram_token, telegram_chat_id = telegram_config(args.dry_run)
     scan_run_id = args.workflow_run_id or str(uuid.uuid4())
     existing_keys = previous_detection_keys(args.journal_date, args.journal_path) if args.journal else set()
+    recent_fingerprints = (
+        recent_alert_fingerprints(args.journal_date, args.journal_path, args.alert_cooldown_minutes)
+        if args.journal
+        else set()
+    )
     seen_keys = set(existing_keys)
+    seen_fingerprints = set(recent_fingerprints)
     results = []
     failures = []
     delivery_results = []
@@ -891,9 +946,19 @@ def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
                 result = build_detection_result(context)
                 validate_basic_schema(result, "detection-result.schema.json")
                 key = detection_duplicate_key(result)
-                result["duplicate_alert"] = bool(key and key in seen_keys)
+                fingerprint = alert_fingerprint(result)
+                duplicate_reasons = []
+                if key and key in seen_keys:
+                    duplicate_reasons.append("same_fractal")
+                if fingerprint and fingerprint in seen_fingerprints:
+                    duplicate_reasons.append("cooldown")
+                result["duplicate_alert"] = bool(duplicate_reasons)
+                result["duplicate_reason"] = ",".join(duplicate_reasons) if duplicate_reasons else None
+                result["alert_cooldown_minutes"] = args.alert_cooldown_minutes
                 if key:
                     seen_keys.add(key)
+                if fingerprint:
+                    seen_fingerprints.add(fingerprint)
                 results.append(result)
 
                 if args.journal:
@@ -945,22 +1010,28 @@ def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
     ]
 
     if args.send_telegram:
+        sent_this_scan = 0
         for result in results:
             message_id = None
             if result.get("duplicate_alert"):
-                delivery = build_delivery_record(result, "skipped", "duplicate_alert")
+                reason = result.get("duplicate_reason") or "duplicate_alert"
+                delivery = build_delivery_record(result, "skipped", reason)
             elif result.get("valid_detection") is not True:
                 delivery = build_delivery_record(result, "skipped", f"{result.get('classification')}_detection")
+            elif sent_this_scan >= args.max_alerts:
+                delivery = build_delivery_record(result, "skipped", "alert_limit_reached")
             else:
                 message = build_telegram_signal_message(result)
                 if args.dry_run:
                     delivery = build_delivery_record(result, "dry_run", "message_not_sent")
                     delivery["telegram_message"] = message
+                    sent_this_scan += 1
                 else:
                     try:
                         telegram_response = send_telegram_message(str(telegram_token), str(telegram_chat_id), message)
                         message_id = telegram_response.get("result", {}).get("message_id")
                         delivery = build_delivery_record(result, "sent", "valid_detection", message_id)
+                        sent_this_scan += 1
                     except CliError as exc:
                         delivery = build_delivery_record(result, "failed", str(exc))
             result["telegram_delivery"] = delivery
@@ -992,6 +1063,7 @@ def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
         f"Valid: {counts['valid']} | Weak: {counts['weak']} | Invalid: {counts['invalid']}",
         f"Duplicates: {counts['duplicate_alerts']} | Failures: {counts['failures']}",
         f"Telegram: sent {delivered} | dry-run {dry_run_deliveries} | skipped {skipped_deliveries} | failed {failed_deliveries}",
+        f"Alert policy: max {args.max_alerts} per scan, {args.alert_cooldown_minutes} minute cooldown per pair/timeframe/direction",
         "Detection only. No trades were placed.",
     ]
     if alert_candidates:
@@ -1151,6 +1223,8 @@ def build_parser() -> argparse.ArgumentParser:
     market_scan.add_argument("--journal-path")
     market_scan.add_argument("--send-telegram", action="store_true")
     market_scan.add_argument("--dry-run", action="store_true")
+    market_scan.add_argument("--alert-cooldown-minutes", type=int, default=DEFAULT_ALERT_COOLDOWN_MINUTES)
+    market_scan.add_argument("--max-alerts", type=int, default=DEFAULT_MAX_ALERTS_PER_SCAN)
     market_scan.set_defaults(func=cmd_workflow_market_scan)
 
     validate_setup = workflows_sub.add_parser("validate-setup")

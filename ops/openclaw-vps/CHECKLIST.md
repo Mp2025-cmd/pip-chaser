@@ -220,8 +220,8 @@ Source of truth:
 - [x] Add Telegram delivery dry-run mode
 - [x] Add automatic support/resistance context from OANDA candles
 - [x] Add EMA 20/50, RSI 14, and MACD 12/26/9 confirmation
-- [x] Add systemd timer artifacts for 5-minute scans
-- [x] Install and enable the 5-minute scheduler on the hosted runtime
+- [x] Add systemd timer artifacts for rate-limited scans
+- [x] Install the scheduler on the hosted runtime
 - [ ] Run continuous detection mode on the hosted runtime
 - [ ] Review alert quality with the team
 - [ ] Track missed detections and false positives

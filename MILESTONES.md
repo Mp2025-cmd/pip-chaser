@@ -225,7 +225,7 @@ Goal: run the full system continuously and learn from real behavior.
 - [x] Add Telegram delivery dry-run mode
 - [x] Add automatic support/resistance context from OANDA candles
 - [x] Add automatic EMA, RSI, and MACD confirmation
-- [x] Add 5-minute VPS scheduler artifacts
+- [x] Add rate-limited VPS scheduler artifacts
 - [ ] Run the bot continuously in detection mode
 - [ ] Review alert quality
 - [ ] Review missed detections

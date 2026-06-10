@@ -7,4 +7,4 @@ After=network-online.target
 Type=oneshot
 WorkingDirectory=/opt/pip-chaser
 EnvironmentFile=/etc/pip-chaser/pip-chaser.env
-ExecStart=/opt/pip-chaser/bin/pip-chaser workflows market-scan --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY --timeframes 15m,1h --count 80 --journal --send-telegram
+ExecStart=/opt/pip-chaser/bin/pip-chaser workflows market-scan --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY --timeframes 15m,1h --count 80 --journal --send-telegram --channel scheduled --alert-cooldown-minutes 240 --max-alerts 1
