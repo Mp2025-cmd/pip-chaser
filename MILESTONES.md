@@ -139,7 +139,7 @@ Current note:
 - `market_scan` now points at the local `bin/pip-chaser` OANDA candle adapter
 - `validate_setup` now runs real fractal classification from market-context JSON
 - Runtime execution now exists for market scanning, setup validation, trade explanation drafts, daily summaries, and journal commands
-- Telegram delivery commands are still pending
+- Telegram delivery now has an authorized command-triggered path through `alerts run`
 
 ## Milestone 5: Risk and Safety Layer
 Goal: prepare safety rules before broker execution exists.
@@ -214,7 +214,7 @@ Current note:
 - `./bin/pip-chaser journal list` and `./bin/pip-chaser journal summary` support review
 
 ## Milestone 9: Detection Trial
-Goal: run the full system continuously and learn from real behavior.
+Goal: run command-triggered detection scans and learn from real behavior.
 
 - [x] Add a repeatable detection-trial scan command
 - [x] Journal each trial scan result
@@ -225,8 +225,9 @@ Goal: run the full system continuously and learn from real behavior.
 - [x] Add Telegram delivery dry-run mode
 - [x] Add automatic support/resistance context from OANDA candles
 - [x] Add automatic EMA, RSI, and MACD confirmation
-- [x] Add rate-limited VPS scheduler artifacts
-- [ ] Run the bot continuously in detection mode
+- [x] Disable autonomous scheduled alerts after group-chat testing
+- [x] Add owner/Derek authorized alert command
+- [ ] Run command-triggered detection mode with the team
 - [ ] Review alert quality
 - [ ] Review missed detections
 - [ ] Review false positives
@@ -243,6 +244,8 @@ Current note:
 - `./bin/pip-chaser workflows market-scan --journal` can scan live OANDA demo candles and journal the results
 - `./bin/pip-chaser workflows market-scan --journal --send-telegram` can send valid non-duplicate signals to Telegram
 - `./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run` previews delivery without posting
+- `./bin/pip-chaser alerts run --requested-by-telegram-id "<id>"` is the preferred command-triggered signal path
+- scheduled alert delivery is disabled; alerts should start only from owner/Derek Telegram commands
 - OANDA candle collection now computes first-pass support/resistance context from closed swing pivots
 - OANDA candle collection now computes EMA 20/50, RSI 14, and MACD 12/26/9 confirmation
 - `./bin/pip-chaser workflows daily-summary` creates a review summary from the journal

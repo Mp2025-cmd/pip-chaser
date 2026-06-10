@@ -37,10 +37,8 @@ By the end of Milestone 1 we should have:
   - does not store secrets
 - `CHECKLIST.md`
   - step-by-step operational checklist for bringing the VPS online
-- `pip-chaser-signal-scan.service`
-  - systemd service for one scheduled OANDA demo scan
-- `pip-chaser-signal-scan.timer`
-  - systemd timer that runs the scan every 15 minutes
+- command-triggered alert instructions
+  - show how OpenClaw should start one OANDA demo scan after an approved Telegram command
 
 ## Notes from the official OpenClaw docs
 
@@ -63,25 +61,31 @@ Milestone 1 does not yet include:
 
 Those come after the hosted OpenClaw runtime is in place.
 
-## Scheduled Signal Scanner
+## Command-Triggered Signal Scanner
 
-The demo signal scanner runs separately from OpenClaw chat.
+The demo signal scanner should be started from Telegram commands through OpenClaw.
 
-Runtime command:
+Current product mode:
+- no autonomous scheduled alerts
+- no systemd timer
+- only the owner or Derek Ngwu can start signal delivery
+- one alert max per command-triggered scan
+- 240-minute cooldown per pair/timeframe/direction
+
+Runtime command for OpenClaw to run after an approved `/scan` request:
 
 ```bash
-/opt/pip-chaser/bin/pip-chaser workflows market-scan \
+cd /opt/pip-chaser
+set -a
+. /etc/pip-chaser/pip-chaser.env
+set +a
+/opt/pip-chaser/bin/pip-chaser alerts run \
+  --requested-by-telegram-id "<owner-or-derek-telegram-id>" \
   --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY \
-  --timeframes 15m,1h \
-  --count 80 \
-  --journal \
-  --send-telegram \
-  --channel scheduled \
-  --alert-cooldown-minutes 240 \
-  --max-alerts 1
+  --timeframes 15m,1h
 ```
 
-Telegram delivery is intentionally conservative: one alert per scan, and no repeated alert for the same pair/timeframe/direction for 240 minutes.
+Telegram delivery is intentionally conservative: one alert per command-triggered scan, and no repeated alert for the same pair/timeframe/direction for 240 minutes.
 
 Secrets live only on the VPS:
 
@@ -96,4 +100,5 @@ OANDA_PAPER_API_KEY=
 OANDA_PAPER_API_BASE=https://api-fxpractice.oanda.com
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_SIGNAL_CHAT_ID=
+PIP_CHASER_ALERT_ALLOWED_TELEGRAM_IDS=
 ```

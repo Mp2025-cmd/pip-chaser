@@ -143,4 +143,4 @@ Current implementation note:
 - market scanning exists in `bin/pip-chaser workflows market-scan`
 - trade explanation exists in `bin/pip-chaser workflows trade-explain`
 - daily summaries exist in `bin/pip-chaser workflows daily-summary`
-- Telegram delivery commands are still pending
+- Telegram delivery now has an authorized command-triggered path through `alerts run`

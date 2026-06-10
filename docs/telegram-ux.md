@@ -13,7 +13,7 @@ Allowed:
 - explain the fractal strategy
 - discuss valid, weak, or invalid detections
 - draft detection alerts
-- send valid detection signals when the manual scan command enables Telegram delivery
+- send valid detection signals only after an approved operator explicitly starts a scan
 - respond in the approved Telegram group when mentioned
 
 Not allowed:
@@ -31,7 +31,13 @@ DMs:
 Group:
 - the bot responds in the approved group only when mentioned
 - group members should use `@pip_chaser_agent_bot`
-- owner-only commands should still require the owner allowlist
+- alert-starting commands are limited to the owner and Derek Ngwu
+- owner-only safety commands should still require the owner allowlist
+
+Background alerts:
+- disabled by default
+- the systemd timer should stay off
+- alerts start only from explicit Telegram commands by approved operators
 
 ## Command List
 
@@ -85,13 +91,13 @@ Resumed.
 Detection mode is active again. Broker execution is still disabled.
 ```
 
-### `/scan SYMBOL`
+### `/scan [SYMBOL]`
 
-Purpose: request a detection scan for one symbol.
+Purpose: request a detection scan and send a Telegram signal only if a valid non-duplicate setup exists.
 
 Who can use it:
-- approved DM users
-- approved group members when mentioning the bot
+- owner
+- Derek Ngwu
 
 Example:
 
@@ -99,31 +105,43 @@ Example:
 @pip_chaser_agent_bot /scan EUR_USD
 ```
 
-Expected reply before market-data automation exists:
+Expected behavior:
+- run one OANDA demo scan
+- use only supported symbols/timeframes
+- send at most one valid signal
+- apply the duplicate/cooldown guard
+- never place a trade
+
+Expected immediate reply:
 
 ```text
-I can prepare a fractal detection review for EUR_USD, but live candle scanning is not wired yet.
-
-Current supported timeframes: 15m, 1h, 4h, Daily.
+Scanning EUR_USD on OANDA demo data.
+I will send a signal only if a valid non-duplicate setup appears.
 ```
 
-Expected reply after market-data automation exists:
-
-```text
-Scanning EUR_USD on 15m, 1h, 4h, and Daily for fractal detections.
-I will alert only if the setup has enough confirmation.
-```
-
-Current manual delivery command:
+Runtime command used by OpenClaw:
 
 ```bash
-./bin/pip-chaser workflows market-scan --journal --send-telegram
+cd /opt/pip-chaser
+set -a
+. /etc/pip-chaser/pip-chaser.env
+set +a
+./bin/pip-chaser alerts run \
+  --requested-by-telegram-id "<telegram_user_id>" \
+  --symbols EUR_USD \
+  --timeframes 15m,1h \
+  --max-alerts 1 \
+  --alert-cooldown-minutes 240
 ```
 
 Dry-run delivery test:
 
 ```bash
-./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run
+./bin/pip-chaser alerts run \
+  --requested-by-telegram-id "<telegram_user_id>" \
+  --symbols EUR_USD \
+  --timeframes 15m,1h \
+  --dry-run
 ```
 
 ### `/explain`
@@ -155,7 +173,7 @@ Example:
 ```text
 Pip Chaser commands:
 - /status: show bot mode and health
-- /scan SYMBOL: request a detection scan
+- /scan [SYMBOL]: owner/Derek only; run one signal scan
 - /explain: explain a setup or recent alert
 - /pause: owner-only safety stop
 - /resume: owner-only resume
@@ -263,6 +281,8 @@ I can answer questions, but I will not start scans or send new alerts until resu
 - Never imply that a trade was placed.
 - Never invent SL, TP, lot size, or entry price.
 - Never treat casual group chat as a command.
+- Never start signal alerts unless the requester is the owner or Derek Ngwu.
+- Never enable scheduled/background alerts from Telegram.
 - In groups, respond only when mentioned.
 - Keep replies short enough for Telegram.
 - Prefer plain English over trading jargon.

@@ -220,9 +220,9 @@ Source of truth:
 - [x] Add Telegram delivery dry-run mode
 - [x] Add automatic support/resistance context from OANDA candles
 - [x] Add EMA 20/50, RSI 14, and MACD 12/26/9 confirmation
-- [x] Add systemd timer artifacts for rate-limited scans
-- [x] Install the scheduler on the hosted runtime
-- [ ] Run continuous detection mode on the hosted runtime
+- [x] Remove the scheduler after moving alerts to command-triggered mode
+- [x] Add authorized command-triggered alert entry point
+- [ ] Run command-triggered detection mode with the team
 - [ ] Review alert quality with the team
 - [ ] Track missed detections and false positives
 - [ ] Tune the skill or workflow from evidence
@@ -242,12 +242,25 @@ Manual signal delivery command:
 ./bin/pip-chaser workflows market-scan --journal --send-telegram
 ```
 
+Preferred authorized alert command:
+
+```bash
+./bin/pip-chaser alerts run \
+  --requested-by-telegram-id "<owner-or-derek-telegram-id>" \
+  --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY \
+  --timeframes 15m,1h
+```
+
 Safe preview:
 
 ```bash
-./bin/pip-chaser workflows market-scan --journal --send-telegram --dry-run
+./bin/pip-chaser alerts run \
+  --requested-by-telegram-id "<owner-or-derek-telegram-id>" \
+  --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY \
+  --timeframes 15m,1h \
+  --dry-run
 ```
 
-Scheduler files:
-- `ops/openclaw-vps/pip-chaser-signal-scan.service`
-- `ops/openclaw-vps/pip-chaser-signal-scan.timer`
+Current scheduler status:
+- removed from the active repo and hosted runtime
+- alerts should start only from owner/Derek Telegram commands

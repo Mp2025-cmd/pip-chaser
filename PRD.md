@@ -19,6 +19,7 @@ The goal is to build an agent that can:
 - run deterministic OpenClaw/Lobster workflows before any later broker action
 - notify the user when a valid detection appears
 - keep a clean journal of what it saw and why it did or did not alert
+- start signal delivery only from explicit commands by approved operators
 
 In short:
 - Telegram is the conversation and alert channel
@@ -29,13 +30,14 @@ In short:
 
 ## Success Criteria
 Version 1 is successful if it can:
-- run continuously on a Linux VPS without manual babysitting
+- run reliably on a Linux VPS without manual babysitting
 - use OpenClaw as the Telegram-facing runtime
 - detect only setups that match the fractal PDF doctrine
 - explain every detection in Telegram in plain English
 - distinguish valid, weak, and invalid detections consistently
 - keep a clear journal of what it saw and why it alerted or stayed quiet
 - survive common failures without duplicated alerts or unsafe behavior
+- avoid background alert spam by requiring owner/Derek command-triggered scans
 
 Paper trading and real-money trading should happen only after:
 - the detection logic is stable
@@ -234,7 +236,7 @@ Only after a later strategy document defines actual trade rules:
 
 ## One Example Use Case
 ### Use Case: The bot finds a valid fractal detection and alerts the user
-1. The user asks the bot to scan a symbol in Telegram, or a scheduled scan runs.
+1. The owner or Derek asks the bot to scan a symbol in Telegram.
 2. OpenClaw starts the `market_scan` workflow.
 3. The workflow gathers candles and passes them to the fractal-detection skill.
 4. The skill checks whether a bullish or bearish fractal is actually present.
@@ -248,6 +250,8 @@ Only after a later strategy document defines actual trade rules:
 7. The result is journaled for later review.
 
 That means the first live behavior is explainable market detection, not unbounded autonomous execution.
+
+Background scheduled alerts are disabled for the current product mode. The bot should not start signal delivery unless an approved operator explicitly asks for it.
 
 ## Public Interfaces and Ownership
 ### Fractal Detection Skill
@@ -297,7 +301,7 @@ The journal contract lives in [docs/journaling.md](docs/journaling.md).
 
 ### Detection Trial Layer
 The detection trial owns:
-- repeated demo-data scans
+- command-triggered demo-data scans
 - duplicate-alert checks
 - valid-signal delivery to Telegram
 - daily review summaries

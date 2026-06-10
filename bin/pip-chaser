@@ -99,6 +99,22 @@ def telegram_config(dry_run: bool) -> tuple[str | None, str | None]:
     return token, chat_id
 
 
+def authorized_alert_user_ids() -> set[str]:
+    raw = os.environ.get("PIP_CHASER_ALERT_ALLOWED_TELEGRAM_IDS", "")
+    return {value.strip() for value in raw.split(",") if value.strip()}
+
+
+def require_alert_authorization(user_id: str | None) -> str:
+    if not user_id:
+        raise CliError("Missing requester Telegram user ID. Refusing to start alert delivery.")
+    allowed = authorized_alert_user_ids()
+    if not allowed:
+        raise CliError("Missing PIP_CHASER_ALERT_ALLOWED_TELEGRAM_IDS. Refusing to start alert delivery.")
+    if str(user_id) not in allowed:
+        raise CliError("This Telegram user is not allowed to start Pip Chaser alerts.")
+    return str(user_id)
+
+
 def read_json_stdin() -> dict:
     try:
         return json.load(sys.stdin)
@@ -1087,6 +1103,26 @@ def cmd_workflow_market_scan(args: argparse.Namespace) -> int:
     )
 
 
+def cmd_alerts_run(args: argparse.Namespace) -> int:
+    requester_id = require_alert_authorization(args.requested_by_telegram_id)
+    scan_args = argparse.Namespace(
+        symbols=args.symbols,
+        timeframes=args.timeframes,
+        count=args.count,
+        workflow_run_id=args.workflow_run_id,
+        channel="telegram",
+        user_id=requester_id,
+        journal=True,
+        journal_date=args.journal_date,
+        journal_path=args.journal_path,
+        send_telegram=True,
+        dry_run=args.dry_run,
+        alert_cooldown_minutes=args.alert_cooldown_minutes,
+        max_alerts=args.max_alerts,
+    )
+    return cmd_workflow_market_scan(scan_args)
+
+
 def cmd_workflow_trade_explain(args: argparse.Namespace) -> int:
     result = read_json_stdin()
     validate_basic_schema(result, "detection-result.schema.json")
@@ -1226,6 +1262,21 @@ def build_parser() -> argparse.ArgumentParser:
     market_scan.add_argument("--alert-cooldown-minutes", type=int, default=DEFAULT_ALERT_COOLDOWN_MINUTES)
     market_scan.add_argument("--max-alerts", type=int, default=DEFAULT_MAX_ALERTS_PER_SCAN)
     market_scan.set_defaults(func=cmd_workflow_market_scan)
+
+    alerts = subparsers.add_parser("alerts")
+    alerts_sub = alerts.add_subparsers(dest="alerts_command", required=True)
+    alerts_run = alerts_sub.add_parser("run")
+    alerts_run.add_argument("--requested-by-telegram-id", required=True)
+    alerts_run.add_argument("--symbols")
+    alerts_run.add_argument("--timeframes")
+    alerts_run.add_argument("--count", type=int, default=80)
+    alerts_run.add_argument("--workflow-run-id")
+    alerts_run.add_argument("--journal-date")
+    alerts_run.add_argument("--journal-path")
+    alerts_run.add_argument("--dry-run", action="store_true")
+    alerts_run.add_argument("--alert-cooldown-minutes", type=int, default=DEFAULT_ALERT_COOLDOWN_MINUTES)
+    alerts_run.add_argument("--max-alerts", type=int, default=DEFAULT_MAX_ALERTS_PER_SCAN)
+    alerts_run.set_defaults(func=cmd_alerts_run)
 
     validate_setup = workflows_sub.add_parser("validate-setup")
     validate_setup.add_argument("--journal", action="store_true")

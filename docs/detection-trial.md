@@ -36,7 +36,16 @@ Send valid signals to the approved Telegram group:
 ./bin/pip-chaser workflows market-scan --journal --send-telegram
 ```
 
-The VPS scheduler runs the same scan every 15 minutes for:
+Preferred operator-triggered alert command:
+
+```bash
+./bin/pip-chaser alerts run \
+  --requested-by-telegram-id "<owner-or-derek-telegram-id>" \
+  --symbols XAU_USD,EUR_USD,GBP_USD,USD_JPY \
+  --timeframes 15m,1h
+```
+
+The VPS scheduler is disabled in the current product mode. When the owner or Derek asks for alerts, the command-triggered scan checks:
 
 - `XAU_USD`
 - `EUR_USD`
@@ -45,7 +54,7 @@ The VPS scheduler runs the same scan every 15 minutes for:
 - `15m`
 - `1h`
 
-Scheduled scans request 80 candles per symbol/timeframe so EMA 20/50, RSI 14, and MACD 12/26/9 have enough history.
+Command-triggered scans request 80 candles per symbol/timeframe so EMA 20/50, RSI 14, and MACD 12/26/9 have enough history.
 Telegram delivery is rate-limited to one alert per scan, with a 240-minute cooldown per pair/timeframe/direction.
 
 Review the journal:
@@ -83,7 +92,7 @@ For each pair/timeframe it:
 - detects the most recent complete 5-candle fractal
 - marks the setup as `valid`, `weak`, or `invalid`
 - flags duplicate alerts using symbol, timeframe, direction, and center candle timestamp
-- sends Telegram alerts only for non-duplicate `valid` detections when delivery is enabled
+- sends Telegram alerts only for non-duplicate `valid` detections when an approved operator starts delivery
 - writes workflow and setup-decision entries to the local journal
 
 ## Signal Delivery
@@ -95,6 +104,7 @@ Required local environment variables:
 ```bash
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 TELEGRAM_SIGNAL_CHAT_ID=your-approved-group-chat-id
+PIP_CHASER_ALERT_ALLOWED_TELEGRAM_IDS=owner-telegram-id,derek-telegram-id
 ```
 
 Delivery rules:
@@ -105,6 +115,9 @@ Delivery rules:
 - duplicate detections are journaled but skipped.
 - every sent, skipped, dry-run, or failed delivery is journaled
 - `--send-telegram` requires `--journal`
+- `alerts run` requires `--requested-by-telegram-id`
+- only IDs in `PIP_CHASER_ALERT_ALLOWED_TELEGRAM_IDS` can start signal delivery
+- the systemd timer should remain disabled unless the team intentionally returns to scheduled alerting
 
 ## How To Review Results
 
